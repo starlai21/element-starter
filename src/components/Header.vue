@@ -14,7 +14,7 @@
       </el-submenu>
     </el-submenu>
     <el-menu-item index="3" >消息中心</el-menu-item>
-    <el-menu-item index="6" style="float: right">欢迎回来, Admin <el-button type="danger">注销</el-button></el-menu-item>
+    <el-menu-item index="6" style="float: right">欢迎回来, Admin <el-button type="danger" @click="logout">注销</el-button></el-menu-item>
   </el-menu>
 </template>
 
@@ -24,6 +24,15 @@
       return {
         activeIndex:'1'
       };
+    },
+    methods:{
+      logout(){
+        this.$store.commit('logout');
+        this.$message({
+          message: '注销成功',
+          type: 'info'
+        });
+      }
     }
   }
 </script>

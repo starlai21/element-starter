@@ -1,6 +1,6 @@
 <template>
 	<div>
-       <img src="../assets/logo.png" style="width:100px">
+       <a href="/"><img src="../assets/logo.png" style="width:100px"></a>
         <el-menu
           default-active="2" router unique-opened>
           <el-submenu index="1">

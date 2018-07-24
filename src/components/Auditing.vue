@@ -9,7 +9,7 @@
                   <span v-else>展开</span>
                 </el-button>
               </div>          
-
+            <transition name="el-zoom-in-top">
               <el-form ref="searchForm" :model="searchForm" label-width="80px" v-show="searchForm.isVisible">
                 <el-form-item label="手机号码" prop="mobile" :rules="{pattern: /^1[34578]\d{9}$/, message: '请输入有效的手机号码！', trigger: 'blur'}" style="margin-top:10px">
                   <el-input v-model="searchForm.mobile"></el-input>
@@ -25,7 +25,7 @@
                 <el-form-item label="发展渠道" prop="channel">
                   <el-select v-model="searchForm.channel" placeholder="请选择类型" style="width: 100%">
                     <el-option label="一" value="1"></el-option>
-                    <el-option label="二" value="1"></el-option>
+                    <el-option label="二" value="2"></el-option>
                     <el-option label="三" value="3"></el-option>
                     <el-option label="四" value="4"></el-option>
                   </el-select>
@@ -43,15 +43,22 @@
                     </el-form-item>
                   </el-col>
                 </el-form-item>
-                <el-form-item label="是否靓号" prop="isSpecial">
-                  <el-switch v-model="searchForm.isSpecial"></el-switch>
-                </el-form-item>             
-
+                <el-form-item label="靓号类型" prop="specialTypes">
+                  <el-select v-model="searchForm.specialTypes" multiple placeholder="请选择类型" style="width: 100%">
+                    <el-option
+                      v-for="item in specialtyOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value">
+                    </el-option>
+                  </el-select>        
+                </el-form-item> 
                 <el-form-item>
                   <el-button type="info" @click="clearForm('searchForm')">重置</el-button>
                   <el-button type="primary" @click="search">查询</el-button>
                 </el-form-item>
-              </el-form>    
+              </el-form>
+            </transition>
           
 
               <!-- display current search conditions -->
@@ -61,15 +68,16 @@
                 <el-tag type="info"  v-show="searchForm.channel != ''">发展渠道: {{searchForm.channel}}</el-tag>
                 <el-tag type="warning" v-show="searchForm.startDate != null">起始时间: {{searchForm.startDate | dateFormater}}</el-tag>
                 <el-tag type="warning" v-show="searchForm.endDate != null">终止时间: {{searchForm.endDate | dateFormater}}</el-tag>
-                <el-tag type="danger" v-show="searchForm.isSpecial">是否靓号: 是</el-tag>
+                <el-tag type="danger" v-show="searchForm.specialTypes.length > 0">靓号类型: <template v-for="t in searchForm.specialTypes">{{t}} </template></el-tag>
               </div>                
 
             </el-card>
         </el-row>
 
           <!-- user pictures -->
-          <el-row>
-            <el-col :span="6">
+        <div v-show="isAuditUIVisible">
+          <el-row v-loading="isLoading">
+            <el-col :span="6" >
               稽核进度
               <br><br>
               <el-progress :text-inside="true" :stroke-width="18" :percentage="70"></el-progress>
@@ -77,25 +85,25 @@
               <el-card :body-style="{ padding: '10px' }" >
                 <el-form label-position="left" label-width="80px" id="userInfo">
                   <el-form-item label="客户姓名:">
-                    王小明
+                    {{auditing.name}}
                   </el-form-item>
                   <el-form-item label="手机号码:">
-                    12321312321
+                    {{auditing.mobile}}
                   </el-form-item>
                   <el-form-item label="身份证号:">
-                    3303031999023234312
+                    {{auditing.id}}
                   </el-form-item>
                   <el-form-item label="发展渠道:">
-                    龙湾XX营业厅
+                    {{auditing.channel}}
                   </el-form-item>
                   <el-form-item label="入网时间:">
-                    2018/07/01
+                    {{auditing.entryDate}}
                   </el-form-item>
                   <el-form-item label="一证N户:">
-                    2
+                    {{auditing.type}}
                   </el-form-item>
                   <el-form-item label="靓号类型:">
-                    AA
+                    {{auditing.specialType}}
                   </el-form-item>
                 </el-form>
               </el-card> 
@@ -103,7 +111,7 @@
 
             <el-col :span="8" :offset="1" >
               <el-card :body-style="{ padding: '0px' }">
-                <img src="https://placeimg.com/700/323/any" class="image">
+                <img :src="auditing.livingPicture" class="image">
                 <div style="padding: 14px;">
                   <span>现场照</span>
                 </div>
@@ -111,7 +119,7 @@
             </el-col>
             <el-col :span="8" :offset="1">
               <el-card :body-style="{ padding: '0px' }">
-                <img src="https://placeimg.com/700/323/any" class="image">
+                <img :src="auditing.idPicture" class="image">
                 <div style="padding: 14px;">
                   <span>身份证照</span>
                 </div>
@@ -122,11 +130,11 @@
           <!-- operations -->
           <el-row style="margin-top: 20px">
             <el-col :span="1" >
-              <el-button type="success" style="padding: 16px" @click="onSubmit">通过</el-button>
+              <el-button type="success" style="padding: 16px" @click="onSubmit('success')">通过</el-button>
             </el-col>       
 
-                <el-col :span="4" :offset="2">
-                  <el-select v-model="violationValue" placeholder="实名违规" clearable :disabled="nonComplainceValue != ''">
+                <el-col :span="4" :offset="6">
+                  <el-select v-model="violationValue" placeholder="未通过原因" clearable>
                     <el-option
                       v-for="item in violationOptions"
                       :key="item.value"
@@ -135,39 +143,29 @@
                     </el-option>
                   </el-select>
                 </el-col>
-                <el-col :span="4" :offset="1">
-                  <el-select v-model="nonComplainceValue" placeholder="实名操作不合规" clearable :disabled="violationValue != ''">
-                    <el-option
-                      v-for="item in nonComplianceOptions"
-                      :key="item.value"
-                      :label="item.label"
-                      :value="item.value">
-                    </el-option>
-                  </el-select>
-                </el-col>
+
       
 
 
-                <el-col :span="6" :offset="1">
+                <el-col :span="9" :offset="1">
                   <el-input type="textarea" v-model="note" placeholder="备注"></el-input>
                 </el-col>
-                <el-col :span="4" :offset="1">
-                  <el-button type="danger" style="padding: 16px" @click="onSubmit">未通过</el-button>
+                <el-col :span="2" :offset="1">
+                  <el-button type="danger" style="padding: 16px" @click="onSubmit('failure')">未通过</el-button>
                 </el-col>
-            
           </el-row>
 
 
           <!-- paginations -->
           <el-row>
-            <div class="block" style="margin-top: 20px">
-              <el-pagination
-                background
-                layout="prev, pager, next"
-                :total="1000">
-              </el-pagination>
-            </div>
+            <el-pagination
+              style="margin-top: 20px"
+              @current-change="handleCurrentChange"
+              layout=" prev, pager, next, jumper"
+              :total="100">
+            </el-pagination>
           </el-row>
+        </div>
     </div>
 </template>
 
@@ -184,6 +182,9 @@
 </style>
 <script type="text/javascript">
 import moment from 'moment';
+import {fetchAuditingData} from '../api';
+
+
 	export default {
 		data(){
 			return {
@@ -193,46 +194,62 @@ import moment from 'moment';
 		          channel: '',
 		          startDate: null,
 		          endDate: null,
-		          isSpecial: false,
-		          isVisible: false,
+		          specialTypes: [],
+		          isVisible: true,
 		          bodyStyle:{
 		            padding: '0px'
 		          }
 		        },		
 
 		        violationOptions: [{
-		          value: '选项1',
+		          value: '1',
 		          label: '人脸无法辨识'
 		        }, {
-		          value: '选项2',
+		          value: '2',
 		          label: '非活体照'
 		        }, {
-		          value: '选项3',
+		          value: '3',
 		          label: '人证不一致'
 		        }, {
-		          value: '选项4',
+		          value: '4',
 		          label: '未按规范拍摄现场人脸照'
-		        }, {
-		          value: '选项5',
-		          label: '其他'
-		        }],		
+		        },{
+              value: '5',
+              label: '大头照'
+            }, {
+              value: '6',
+              label: '非正面清晰照/完整照'
+            }, {
+              value: '7',
+              label: '未按要求持证/未持证'
+            }, {
+              value: '8',
+              label: '其他'
+            }],		
 
-		        nonComplianceOptions: [{
-		          value: '选项1',
-		          label: '大头照'
-		        }, {
-		          value: '选项2',
-		          label: '非正面清晰照/完整照'
-		        }, {
-		          value: '选项3',
-		          label: '持证照'
-		        }, {
-		          value: '选项4',
-		          label: '其他'
-		        }],
+            specialtyOptions: [{
+              value: '1',
+              label: '1'
+            },{
+              value: '2',
+              label: '2'
+            },{
+              value: '3',
+              label: '3'
+            },{
+              value: '4',
+              label: '4'
+            },{
+              value: '5',
+              label: '5'
+            }],
 		        note: '',
 		        violationValue: '',
-		        nonComplainceValue: ''
+            isAuditUIVisible: false,
+            isLoading: false,
+            auditings: [],
+            auditing: [],
+            currentIndex: -1
 			};
 		},
 	  	filters:{
@@ -244,7 +261,24 @@ import moment from 'moment';
 	    	search(){
 	      		this.$refs['searchForm'].validate((valid) => {
 		        	if (valid) {
-		          		alert('search...');
+                this.isLoading = true;
+                var params = {mobile: this.searchForm.mobile, type: this.searchForm.type, channel: this.searchForm.channel, 
+                              startDate: this.searchForm.startDate, endDate: this.searchForm.endDate,
+                              specialTypes: this.searchForm.specialTypes};
+                fetchAuditingData(params).then(data => {
+
+                  this.auditings = data.auditings;
+
+
+                  if (this.auditings.length>0)
+                    this.auditing = this.auditings[0];
+                  this.isLoading = false;
+                }).catch(e => {
+                  this.isLoading = false;
+                  console.log(e);
+                })
+		          		// alert('search...');
+                this.isAuditUIVisible = true;
 		        	} else {
 		          		console.log('error submit!!');
 		          		return false;
@@ -259,25 +293,47 @@ import moment from 'moment';
 		        this.searchForm.bodyStyle.padding = '0px';
 		    },
 		    clearForm(formName){
-		    	// this.searchForm.isSpecial = false;
 		    	this.$refs[formName].resetFields();
 		    },
-		    onSubmit(){
-		      this.startHacking();
+        resetAuditForm(){
+          this.violationValue = '';
+          this.note = '';
+        },
+		    onSubmit(state){
+          if (state === 'success'){
+            this.send();
+          }
+          else{
+            if ((this.violationValue !== '' && this.violationValue !== "8") || this.note !== ''){
+              this.send();
+            }
+            else{
+              this.$message({
+                type: 'error',
+                message: '请选择未通过原因或填写备注!',
+                duration: 3000
+              });
+            }
+          }
+		      
 		    },
 		    isConditionChanged(){
 		      var form = this.searchForm;
 		      return form.mobile != '' || form.type != '' || form.channel != '' || form.isSpecial || form.startDate != null || form.endDate != null;
 		    },		
 
-		    startHacking () {
-		      this.$notify({
-		        title: 'It works!',
+		    send() {
+          this.resetAuditForm();
+		      this.$message({
 		        type: 'success',
-		        message: 'We\'ve laid the ground work for you. It\'s time for you to build something epic!',
-		        duration: 5000
+		        message: '提交成功!',
+		        duration: 3000
 		      })
-		    }
+		    },
+        handleCurrentChange(val){
+          this.auditing = this.auditings[val-1];
+        }
+
 		  }
 	}
 </script>

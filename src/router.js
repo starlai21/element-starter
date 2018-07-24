@@ -2,16 +2,55 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Auditing from './components/Auditing.vue'
 import Audited from './components/Audited.vue'
+import Login from './components/Login.vue'
+import Home from './components/Home.vue'
+import store from './store'
+
 Vue.use(VueRouter);
 
 const routes = [
-  { path: '/auditing', component: Auditing },
-  { path: '/audited', component: Audited }
+
+
+  { path: '/', 
+    component: Home, 
+    meta: { requireAuth: true},
+    children: [
+      {
+        path: 'auditing',
+        component: Auditing
+      },
+      {
+        path: 'audited',
+        component: Audited
+      }
+    ]
+
+  },
+
+  { path: '/login', 
+    component: Login 
+  }
 ]
 
 
 const router = new VueRouter({
   routes
 })
+
+router.beforeEach((to,from,next) => {
+    if(to.matched.some(m => m.meta.requireAuth)){
+
+        if (store.getters.isLogined){
+            next();
+        }else {
+            next({
+                path : '/login',
+                query : {redirect : to.fullPath}
+            })
+        }
+    }else {
+        next()
+    }
+});
 
 export default router
