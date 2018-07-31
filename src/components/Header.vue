@@ -14,12 +14,18 @@
       </el-submenu>
     </el-submenu>
     <el-menu-item index="3" >消息中心</el-menu-item>
-    <el-menu-item index="6" style="float: right">欢迎回来, Admin <el-button type="danger" @click="logout">注销</el-button></el-menu-item>
+    <el-menu-item index="6" style="float: right">欢迎回来, {{username}} <el-button type="danger" @click="logout">注销</el-button></el-menu-item>
   </el-menu>
 </template>
 
 <script type="text/javascript">
+import { mapState } from 'vuex'
   export default {
+    computed:{
+      ...mapState([
+        'username'
+        ])
+    },
     data(){
       return {
         activeIndex:'1'

@@ -5,7 +5,8 @@ Vue.use(Vuex);
 
 const store = new Vuex.Store({
     state : {
-    	token: ''
+    	token: '',
+        username: ''
     },
     getters :{
         isLogined(state){
@@ -22,7 +23,12 @@ const store = new Vuex.Store({
         logout(state){
         	state.token = '';
         	localStorage.removeItem('token');
+            localStorage.removeItem('username');
         	router.push({path:'/login'});
+        },
+        setUsername(state, name){
+            state.username = name;
+            localStorage.setItem("username", name);
         }
 
     }
