@@ -15,6 +15,9 @@
                 <el-form-item label="手机号码" prop="mobile"  style="margin-top:10px">
                   <el-input v-model="searchForm.mobile"></el-input>
                 </el-form-item>
+                <el-form-item label="发展渠道" prop="channel"  style="margin-top:10px">
+                  <el-input v-model="searchForm.channel"></el-input>
+                </el-form-item>
                 <el-form-item label="一证N户" prop="types">
                   <el-select v-model="searchForm.types" placeholder="请选择类型" style="width: 100%" multiple>
                     <el-option
@@ -26,17 +29,8 @@
 
                   </el-select>
                 </el-form-item>
-                <el-form-item label="发展渠道" prop="channels">
-                  <el-select v-model="searchForm.channels" placeholder="请选择类型" style="width: 100%" clearable multiple>
-                    <el-option
-                      v-for="item in channelOptions"
-                      :key="item.value"
-                      :label="item.label"
-                      :value="item.value">
-                    </el-option>
-                  </el-select>
-                </el-form-item>
-                <el-form-item label="时间筛选">
+
+                <el-form-item label="入网时间">
                   <el-col :span="11">
                     <el-form-item prop="startDate">
                       <el-date-picker  type="date" placeholder="起始时间" v-model="searchForm.startDate" style="width: 100%;" clearable></el-date-picker>
@@ -71,7 +65,7 @@
               <div v-show="!searchForm.isVisible">
                 <el-tag v-show="searchForm.mobile != ''">手机号码: {{searchForm.mobile}}</el-tag>
                 <el-tag type="success"  v-show="searchForm.types.length > 0">一证N户: <template v-for="t in searchForm.types">{{t}} </template></el-tag>
-                <el-tag type="info"  v-show="searchForm.channels.length > 0">发展渠道:<template v-for="t in searchForm.channels">{{t}} </template></el-tag>
+                <el-tag type="info"  v-show="searchForm.channel != ''">发展渠道:{{searchForm.channel}} </el-tag>
                 <el-tag type="warning" v-show="searchForm.startDate != null">起始时间: {{searchForm.startDate | dateFormatter}}</el-tag>
                 <el-tag type="warning" v-show="searchForm.endDate != null">终止时间: {{searchForm.endDate | dateFormatter}}</el-tag>
                 <el-tag type="danger" v-show="searchForm.specialTypes.length > 0">靓号类型: <template v-for="t in searchForm.specialTypes">{{t}} </template></el-tag>
@@ -83,7 +77,7 @@
           <!-- user pictures -->
         <div v-show="isAuditUIVisible">
           <el-row v-loading="isLoading">
-            <el-col :span="6" >
+            <el-col :span="8" >
 <!--               用户信息
               <br> -->
 <!--               <el-progress :text-inside="true" :stroke-width="18" :percentage="70"></el-progress> -->
@@ -115,24 +109,24 @@
                     {{auditing.type}}
                   </el-form-item>
                   <el-form-item label="靓号类型:">
-                    {{auditing.specialType}}
+                    {{auditing.numType}}
                   </el-form-item>
                 </el-form>
 
               </el-card> 
             </el-col>
 
-            <el-col :span="8" :offset="1" >
-              <el-card :body-style="{ padding: '0px' }">
-                <img :src="livingPic(auditing.pictures)" class="image">
+            <el-col :span="6" :offset="2" >
+              <el-card :body-style="{ padding: '0px' }" :v-loading="pictureLoading">
+                <img :src="livingPic(auditing.pictures)" class="my-image">
                 <div style="padding: 14px;">
                   <span>现场照</span>
                 </div>
               </el-card>
             </el-col>
-            <el-col :span="8" :offset="1">
-              <el-card :body-style="{ padding: '0px' }">
-                <img :src="idPic(auditing.pictures)" class="image">
+            <el-col :span="6" :offset="2">
+              <el-card :body-style="{ padding: '0px' }" :v-loding="pictureLoading">
+                <img :src="idPic(auditing.pictures)" class="my-image">
                 <div style="padding: 14px;">
                   <span>身份证照</span>
                 </div>
@@ -143,10 +137,10 @@
           <!-- operations -->
           <el-row style="margin-top: 20px">
             <el-col :span="1" >
-              <el-button type="success" style="padding: 16px" @click="onSubmit('success')">通过</el-button>
+              <el-button type="success" style="padding: 16px" @click="onSubmit('success')" :loading="successLoading">通过</el-button>
             </el-col>       
 
-                <el-col :span="4" :offset="6">
+                <el-col :span="4" :offset="9">
                   <el-select v-model="violationValue" placeholder="未通过原因" clearable>
                     <el-option
                       v-for="item in violationOptions"
@@ -160,11 +154,11 @@
       
 
 
-                <el-col :span="9" :offset="1">
+                <el-col :span="6" :offset="1">
                   <el-input type="textarea" v-model="note" placeholder="备注"></el-input>
                 </el-col>
                 <el-col :span="2" :offset="1">
-                  <el-button type="danger" style="padding: 16px" @click="onSubmit('failure')">未通过</el-button>
+                  <el-button type="danger" style="padding: 16px" @click="onSubmit('failure')" :loading="failureLoading">未通过</el-button>
                 </el-col>
           </el-row>
 
@@ -174,12 +168,16 @@
             <el-pagination
               style="margin-top: 20px"
               @current-change="handleCurrentChange"
-              layout=" prev, pager, next, jumper"
+              layout=" prev, pager, next, jumper, slot"
               prev-text="上一页"
               next-text="下一页"
               :current-page.sync="page.currentPage"
               :page-count="page.total">
+              <!-- <el-button style="padding: 0px; margin-left:30px">下一批</el-button> -->
             </el-pagination>
+
+           
+            
           </el-row>
         </div>
     </div>
@@ -193,8 +191,8 @@
   #userInfo .el-form-item{
     margin-bottom: 0px;
   }
-  .image {
-    width:500px;
+  .my-image {
+    width:323px;
     height:323px;
   }
 
@@ -203,7 +201,7 @@
 </style>
 <script type="text/javascript">
 import moment from 'moment';
-import {fetchAuditingData,postAuditingForm} from '../api';
+import {fetchAuditingData,postAuditingForm, fetchPictures} from '../api';
 import {AuditMixin} from './mixins/AuditMixin'
 
 	export default {
@@ -217,7 +215,11 @@ import {AuditMixin} from './mixins/AuditMixin'
         currentIndex: -1,
       };
     },
-
+// function insertArrayAt(array, index, arrayToInsert) {
+//     Array.prototype.splice.apply(array, [index, 0].concat(arrayToInsert));
+//     return array;
+// }var arrToInsert = ["x", "y", "z"];
+// insertArrayAt(arr, 1, arrToInsert);
   	methods: {	
     	search(){
       		this.$refs['searchForm'].validate((valid) => {
@@ -225,17 +227,19 @@ import {AuditMixin} from './mixins/AuditMixin'
                this.isLoading = true;
                this.isAuditUIVisible =true;
 
-                var params = {mobile: this.searchForm.mobile, types: this.searchForm.types, channels: this.searchForm.channels, 
+                var params = {mobile: this.searchForm.mobile, types: this.searchForm.types, channel: this.searchForm.channel, 
                              startDate: this.sDate, endDate: this.eDate,
                              specialTypes: this.searchForm.specialTypes};
                 
                fetchAuditingData(params).then(data => {
-                // console.log(data);
+                console.log(data);
                 // this.auditings = data.auditings;
                  this.auditings = data;
                  this.$set(this.page,'total',this.auditings.length);
+                 // this.$set(this.page,'total',data.totalElements);
                  if (this.auditings.length>0){
                    this.auditing = this.auditings[0];
+                   this.fetchPictures();
                    this.isAuditUIVisible = true;
                    this.$set(this.page,'currentPage',1);
                  }
@@ -278,28 +282,32 @@ import {AuditMixin} from './mixins/AuditMixin'
 	    },		
 	    send(state) {
          // save in the db
-
         var type = this.violationValue
-        if (state === 1)
-          type = 0
+        if (state === 1){
+          this.successLoading=true;
+          type = 0;
+        }
+        else
+          this.failureLoading=true;
         var params = {state: state, note: this.note, type: type, uuid: this.auditing.uuid, idPicUuid:"", livingPicUuid:"",
                       subscriptionId: this.auditing.subscriptionId};
         postAuditingForm(params).then(data => {
-
 
           this.$message({
             type: 'success',
             message: '提交成功!',
             duration: 3000
           });
-        }).catch(e => {
-          console.log(e);
-        })
+          this.successLoading = false;
+          this.failureLoading = false;
          var des = '';
          if (state === 1)
            des = "人工审核通过";
          else
            des = this.violationOptions.find((obj) => obj.value === this.violationValue).label;
+          // des = this.violationOptions[parseInt(this.violationValue)-1].label;
+          this.resetAuditForm();
+
          this.$set(this.auditing, 'state', des);
          this.$set(this.auditings, this.currentIndex, this.auditing);
          if (this.page.currentPage < this.page.total){
@@ -307,13 +315,32 @@ import {AuditMixin} from './mixins/AuditMixin'
            this.handleCurrentChange(this.page.currentPage);
          }
 
-         this.resetAuditForm();
+        }).catch(e => {
+          console.log(e);
+        })
+
+         
 
 	    },
-       handleCurrentChange(val){
-         this.currentIndex = val-1;
-         this.auditing = this.auditings[val-1];
-       }
+      handleCurrentChange(val){
+        this.currentIndex = val-1;
+        this.auditing = this.auditings[val-1];
+        this.fetchPictures();
+      },
+      fetchPictures(){
+        if (!this.auditing.pictures){
+          this.pictureLoading = true;
+          fetchPictures({userUuid: this.auditing.uuid}).then(data => {
+            console.log(data);
+            this.pictureLoading = false;
+            this.$set(this.auditing, 'pictures', data);
+            this.$set(this.auditings, this.currentIndex, this.auditing);
+          }).catch(e => {
+            this.pictureLoading = false;
+            console.log(e);
+          })
+        }
+      }
 	  }
 	}
 </script>

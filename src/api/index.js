@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-axios.defaults.baseURL = 'http://127.0.0.1:8080';
+axios.defaults.baseURL = 'http://10.21.114.6:8080';
 
-axios.defaults.timeout = 5000;
+axios.defaults.timeout = 8000;
 
 
 
@@ -18,3 +18,11 @@ export const fetchAuditedData = params => {
 };
 
 export const postAuditingForm = params => { return axios.post('/auditForm', params).then(res => res.data)};
+
+export const fetchPictures = params => {
+	return axios.get('/pictures',  {params:params}).then(res => res.data).catch(res => res)
+};
+
+export const fetchLogs = params => {
+	return axios.get('/logs',  {params:params}).then(res => res.data).catch(res => res)
+};

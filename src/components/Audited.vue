@@ -3,16 +3,16 @@
     <el-card class="box-card" shadow="hover" :body-style="searchForm.bodyStyle" >
       <div slot="header" class="clearfix">
         <el-form :inline="true"  >
-          <el-form-item>
+          <el-form-item label="最近一次稽核时间">
             <el-col :span="11">
-              <el-form-item prop="startDate">
-                <el-date-picker type="date" placeholder="起始时间"  v-model="searchForm.startDate" style="width: 100%;"></el-date-picker>
+              <el-form-item prop="updateFrom">
+                <el-date-picker type="date" placeholder="起始时间"  v-model="searchForm.updateFrom" style="width: 100%;"></el-date-picker>
               </el-form-item>
             </el-col>
             <el-col class="line" :span="2">-</el-col>
             <el-col :span="11">
-              <el-form-item prop="endDate">
-                <el-date-picker type="date" placeholder="终止时间"  v-model="searchForm.endDate" style="width: 100%;"></el-date-picker>
+              <el-form-item prop="updateTo">
+                <el-date-picker type="date" placeholder="终止时间"  v-model="searchForm.updateTo" style="width: 100%;"></el-date-picker>
               </el-form-item>
             </el-col>
           </el-form-item>
@@ -32,20 +32,13 @@
                 <el-form-item label="手机号码" prop="mobile"  style="margin-top:10px">
                   <el-input v-model="searchForm.mobile"></el-input>
                 </el-form-item>
+                <el-form-item label="发展渠道" prop="channel"  style="margin-top:10px">
+                  <el-input v-model="searchForm.channel"></el-input>
+                </el-form-item>
                 <el-form-item label="一证N户" prop="types">
                   <el-select v-model="searchForm.types" multiple placeholder="请选择类型" style="width: 100%" clearable>
                     <el-option
                       v-for="item in typeOptions"
-                      :key="item.value"
-                      :label="item.label"
-                      :value="item.value">
-                    </el-option>
-                  </el-select>
-                </el-form-item>
-                <el-form-item label="发展渠道" prop="channels">
-                  <el-select v-model="searchForm.channels" multiple placeholder="请选择类型" style="width: 100%" clearable>
-                    <el-option
-                      v-for="item in channelOptions"
                       :key="item.value"
                       :label="item.label"
                       :value="item.value">
@@ -71,7 +64,20 @@
                       :value="item.value">
                     </el-option>
                   </el-select>        
-                </el-form-item>  
+                </el-form-item> 
+                 <el-form-item label="入网时间">
+                   <el-col :span="11">
+                     <el-form-item prop="startDate">
+                       <el-date-picker type="date" placeholder="起始时间"  v-model="searchForm.startDate" style="width: 100%;"></el-date-picker>
+                     </el-form-item>
+                   </el-col>
+                   <el-col class="line" :span="2">-</el-col>
+                   <el-col :span="11">
+                     <el-form-item prop="endDate">
+                       <el-date-picker type="date" placeholder="终止时间"  v-model="searchForm.endDate" style="width: 100%;"></el-date-picker>
+                     </el-form-item>
+                   </el-col>
+                 </el-form-item>
 
                 <el-form-item>
                   <el-button type="info" @click="clearForm('searchForm')">重置</el-button>
@@ -84,7 +90,8 @@
     </el-card>
     <el-table v-loading="isLoading"
       :data="_tableData"
-      style="width: 100%; margin-top:10px" border stripe @row-click="rowClicked">
+      style="width: 100%; margin-top:10px" border stripe @cell-click="cellClicked">
+
       <el-table-column
         prop="state"
         label="稽核结果"
@@ -135,12 +142,12 @@
         width="100" align="center">
       </el-table-column>
       <el-table-column
-        prop="combo"
+        prop="productName"
         label="套餐"
-        width="100" align="center">
+        width="200" align="center">
       </el-table-column>
       <el-table-column
-        prop="county"
+        prop="countyId"
         label="县分"
         width="100" align="center">
       </el-table-column>  
@@ -150,19 +157,19 @@
         label="发展渠道" align="center" width="400"
       >
       </el-table-column>
-      <el-table-column
+     <!--  <el-table-column
         prop="checkLogs[0].note"
         label="备注" align="center" width="400"
       >
       </el-table-column>
-<!--       <el-table-column
+      <el-table-column
         prop="auditDate"
         label="稽核日期"
         sortable
         width="180"
         :filters="auditDateFilter"
         :filter-method="auditDateFilterHandler" align="center"
-      > -->
+      >
       <el-table-column
         prop="checkLogs"
         label="稽核日期"
@@ -176,7 +183,7 @@
         prop="checkLogs[0].operatorId"
         label="稽核工号"
         width="200" align="center">
-      </el-table-column>
+      </el-table-column> -->
 <!--       <el-table-column
           prop="idPicture"
           header-align="center"
@@ -193,14 +200,32 @@
               <img slot="reference" :src="scope.row.livingPicture" :alt="scope.row.livingPicture" style="max-height: 100px;max-width: 80px">
             </el-popover>
           </template>
-      </el-table-column>
+      </el-table-column> -->
       <el-table-column
         label="操作"
         width="150" align="center">
         <template slot-scope="scope">
-          <el-button type="primary" @click="reaudit(scope.row,scope.$index)">重新稽核</el-button>
+          <el-popover
+            placement="right"
+            trigger="click">
+            <el-table :data="logs" border v-loading="!logLoading">
+              <el-table-column width="220" property="status" label="稽核结果" align="center">
+                <template slot-scope="scope">
+                  <el-tag v-if="stateFormatter(scope.row.status) ==='人工审核通过'" type="success">{{stateFormatter(scope.row.status)}}</el-tag>
+                  <el-tag v-else-if="stateFormatter(scope.row.status) ==='人工审核未通过'" type="danger">{{stateFormatter(scope.row.status)}}</el-tag>
+                  <el-tag v-else-if="stateFormatter(scope.row.status) ==='已重新取照-待二审'" >{{stateFormatter(scope.row.status)}}</el-tag>
+                  <el-tag v-else type="warning">{{stateFormatter(scope.row.status)}}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column width="200" property="insertDate" label="稽核日期" align="center" :formatter="auditDateFormatter"></el-table-column>
+              <el-table-column width="600" property="note" label="备注" align="center"></el-table-column>
+              <el-table-column width="100" property="operatorId" label="稽核工号" align="center"></el-table-column>
+            </el-table>
+            <el-button slot="reference" type="primary" @click="fetchLogs(scope.row)">查看日志</el-button>
+          </el-popover>
+          <!-- <el-button type="primary" @click="reaudit(scope.row,scope.$index)">查看稽核日志</el-button> -->
         </template>
-      </el-table-column>   -->
+      </el-table-column>  
 
     </el-table>
 
@@ -251,7 +276,7 @@
               </el-card> 
             </el-col>
 
-            <el-col :span="8" :offset="1" >
+            <el-col :span="6" :offset="2" >
               <el-card :body-style="{ padding: '0px' }">
                 <img :src="livingPic(currentRow.pictures)" class="image">
                 <div style="padding: 14px;">
@@ -259,7 +284,7 @@
                 </div>
               </el-card>
             </el-col>
-            <el-col :span="8" :offset="1">
+            <el-col :span="6" :offset="2">
               <el-card :body-style="{ padding: '0px' }">
                 <img :src="idPic(currentRow.pictures)" class="image">
                 <div style="padding: 14px;">
@@ -271,10 +296,10 @@
           <!-- operations -->
           <el-row style="margin-top: 20px">
             <el-col :span="1" >
-              <el-button type="success" style="padding: 16px" @click="onSubmit('success')">通过</el-button>
+              <el-button type="success" style="padding: 16px" @click="onSubmit('success')" :loading="successLoading">通过</el-button>
             </el-col>       
 
-                <el-col :span="4" :offset="6">
+                <el-col :span="4" :offset="7">
                   <el-select v-model="violationValue" placeholder="实名违规" clearable>
                     <el-option
                       v-for="item in violationOptions"
@@ -285,11 +310,11 @@
                   </el-select>
                 </el-col>
     
-                <el-col :span="9" :offset="1">
+                <el-col :span="6" :offset="1">
                   <el-input type="textarea" v-model="note" placeholder="备注"></el-input>
                 </el-col>
                 <el-col :span="2" :offset="1">
-                  <el-button type="danger" style="padding: 16px" @click="onSubmit('failure')">未通过</el-button>
+                  <el-button type="danger" style="padding: 16px" @click="onSubmit('failure')" :loading="failureLoading">未通过</el-button>
                 </el-col>
             
           </el-row>
@@ -304,14 +329,16 @@
     margin-bottom: 10px;
   }
   .image {
-    width:470px;
+    width:323px;
     height:323px;
   }
+
+
 </style>
 
 <script>
 import moment from 'moment';
-import {fetchAuditedData, postAuditingForm} from '../api';
+import {fetchAuditedData, postAuditingForm, fetchLogs, fetchPictures} from '../api';
 import {AuditMixin} from './mixins/AuditMixin'
   export default {
     mounted(){
@@ -349,7 +376,10 @@ import {AuditMixin} from './mixins/AuditMixin'
         isReauditDialogVisible: false,
         currentRowState: "原稽核结果为: ",
         currentRow: [],
-        pageSize: 8
+        pageSize: 8,
+        logLoading: false,
+        logs: []
+
 
 
       };
@@ -358,8 +388,12 @@ import {AuditMixin} from './mixins/AuditMixin'
 
       send(state){
         var type = this.violationValue
-        if (state === 1)
+        if (state === 1){
           type = 0
+          this.successLoading = true;
+        }
+        else
+          this.failureLoading = true;
         var params = {state: state, note: this.note, type: type, uuid: this.currentRow.uuid, idPicUuid:"", livingPicUuid:"",
                       subscriptionId: this.currentRow.subscriptionId};
         postAuditingForm(params).then(data => {
@@ -372,6 +406,8 @@ import {AuditMixin} from './mixins/AuditMixin'
             message: '提交成功!',
             duration: 3000
           });
+          this.successLoading = false;
+          this.failureLoading = false;
         }).catch(e => {
           console.log(e);
         })
@@ -389,9 +425,7 @@ import {AuditMixin} from './mixins/AuditMixin'
 
       },
       auditDateFormatter(row, column){
-        if (row[column.property].length === 0)
-          return null;
-        return moment(row[column.property][0].insertDate).format('l');
+        return moment(row[column.property]).format('YYYY-MM-DD hh:mm a');
       },
       filterTag(value, row) {
         return row.state === value;
@@ -406,11 +440,11 @@ import {AuditMixin} from './mixins/AuditMixin'
         this.$refs['searchForm'].validate((valid) => {
           if (valid) {
             this.isLoading = true;
-            var params = {mobile: this.searchForm.mobile, types: this.searchForm.types, channels: this.searchForm.channels, 
+            var params = {mobile: this.searchForm.mobile, types: this.searchForm.types, channel: this.searchForm.channel, 
                          startDate: this.searchForm.startDate, endDate: this.searchForm.endDate,
-                         specialTypes: this.searchForm.specialTypes, states: this.searchForm.states};
+                         specialTypes: this.searchForm.specialTypes, states: this.searchForm.states, updateFrom: this.searchForm.updateFrom, updateTo: this.searchForm.updateTo};
             fetchAuditedData(params).then(data => {
-              console.log(data)
+              // console.log(data);
               this.tableData = data;
               this.$set(this.page,'total',this.tableData.length);
               if (this.tableData.length>0){
@@ -466,6 +500,25 @@ import {AuditMixin} from './mixins/AuditMixin'
 
         this.reaudit(row, this.tableData.indexOf(row));
 
+      },
+      cellClicked(row, column, cell, event){
+        if(column.label === '稽核结果'){
+          this.reaudit(row, this.tableData.indexOf(row));
+        }
+        else{
+        }
+      },
+      fetchLogs(row){
+        this.logs = [];
+        this.logLoading = true;
+        fetchLogs({userUuid: row.uuid}).then(data => {
+          this.logLoading = false;
+          console.log(data);
+          this.logs = data;
+        }).catch( e => {
+          this.logLoading = false;
+          console.log(e);
+        })
       }
     }
   }

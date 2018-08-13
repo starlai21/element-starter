@@ -24,9 +24,11 @@ var AuditMixin = {
 			searchForm: {
 	          mobile: '',
 	          types: [],
-	          channels: [],
+	          channel: '',
 	          startDate: null,
 	          endDate: null,
+            updateFrom: null,
+            updateTo: null,
 	          specialTypes: [],
 	          isVisible: true,
 	          bodyStyle:{
@@ -124,16 +126,21 @@ var AuditMixin = {
             }],
 		    note: '',
 		    violationValue: '',
-            isLoading: false,
-            page: {
-              total: 0,
-              currentPage: 1
-            }
+        isLoading: false,
+        page: {
+          total: 0,
+          currentPage: 1
+        },
+        successLoading:false,
+        failureLoading:false,
+        pictureLoading:false
 		};
 	},
 	methods:{
 	    clearForm(formName){
 	    	this.$refs[formName].resetFields();
+        this.searchForm.updateTo = null;
+        this.searchForm.updateFrom = null;
 	    },
       	resetAuditForm(){
          	this.violationValue = '';
@@ -158,7 +165,7 @@ var AuditMixin = {
 	    },
       livingPic(pictures){
         
-        if (pictures && pictures.length>0){
+        if (pictures && pictures.length === 2){
           var pic =  pictures.filter((c,i,a) => {
             return c.type === 0
           })
@@ -168,7 +175,7 @@ var AuditMixin = {
       },
       idPic(pictures){
         
-        if (pictures && pictures.length>0){
+        if (pictures && pictures.length === 2){
           var pic =  pictures.filter((c,i,a) => {
             return c.type === 1
           })
