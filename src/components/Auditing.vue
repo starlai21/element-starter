@@ -117,7 +117,7 @@
             </el-col>
 
             <el-col :span="6" :offset="2" >
-              <el-card :body-style="{ padding: '0px' }" :v-loading="pictureLoading">
+              <el-card :body-style="{ padding: '0px' }" v-loading="pictureLoading">
                 <img :src="livingPic(auditing.pictures)" class="my-image">
                 <div style="padding: 14px;">
                   <span>现场照</span>
@@ -125,7 +125,7 @@
               </el-card>
             </el-col>
             <el-col :span="6" :offset="2">
-              <el-card :body-style="{ padding: '0px' }" :v-loding="pictureLoading">
+              <el-card :body-style="{ padding: '0px' }" v-loding="pictureLoading">
                 <img :src="idPic(auditing.pictures)" class="my-image">
                 <div style="padding: 14px;">
                   <span>身份证照</span>

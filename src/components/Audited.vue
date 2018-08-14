@@ -277,7 +277,7 @@
             </el-col>
 
             <el-col :span="6" :offset="2" >
-              <el-card :body-style="{ padding: '0px' }">
+              <el-card :body-style="{ padding: '0px' }" v-loading="pictureLoading">
                 <img :src="livingPic(currentRow.pictures)" class="image">
                 <div style="padding: 14px;">
                   <span>现场照</span>
@@ -285,7 +285,7 @@
               </el-card>
             </el-col>
             <el-col :span="6" :offset="2">
-              <el-card :body-style="{ padding: '0px' }">
+              <el-card :body-style="{ padding: '0px' }" v-loading="pictureLoading">
                 <img :src="idPic(currentRow.pictures)" class="image">
                 <div style="padding: 14px;">
                   <span>身份证照</span>
@@ -378,7 +378,8 @@ import {AuditMixin} from './mixins/AuditMixin'
         currentRow: [],
         pageSize: 8,
         logLoading: false,
-        logs: []
+        logs: [],
+        pictureLoading: false
 
 
 
@@ -475,6 +476,7 @@ import {AuditMixin} from './mixins/AuditMixin'
         this.currentRow = row;
         this.currentRow.index = index;
         this.currentRowState = "原稽核结果为: " + this.stateFormatter(row.state);
+        this.fetchPictures();
         this.isReauditDialogVisible = true;
       },
       handleClose(done) {
@@ -519,6 +521,20 @@ import {AuditMixin} from './mixins/AuditMixin'
           this.logLoading = false;
           console.log(e);
         })
+      },
+      fetchPictures(){
+        if (!this.currentRow.pictures){
+          this.pictureLoading = true;
+          fetchPictures({userUuid: this.currentRow.uuid}).then(data => {
+            console.log(data);
+            this.pictureLoading = false;
+            this.$set(this.currentRow, 'pictures', data);
+            this.$set(this.tableData, this.currentRow.index, this.currentRow);
+          }).catch(e => {
+            this.pictureLoading = false;
+            console.log(e);
+          })
+        }
       }
     }
   }

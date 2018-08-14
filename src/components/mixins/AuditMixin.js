@@ -165,7 +165,7 @@ var AuditMixin = {
 	    },
       livingPic(pictures){
         
-        if (pictures && pictures.length === 2){
+        if (pictures && pictures.length >0 && (pictures.length === 2 || pictures[0].type === 0)){
           var pic =  pictures.filter((c,i,a) => {
             return c.type === 0
           })
@@ -175,7 +175,7 @@ var AuditMixin = {
       },
       idPic(pictures){
         
-        if (pictures && pictures.length === 2){
+        if (pictures && pictures.length > 0 && (pictures.length === 2 || pictures[0].type === 1)){
           var pic =  pictures.filter((c,i,a) => {
             return c.type === 1
           })
