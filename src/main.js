@@ -9,6 +9,13 @@ import Mock from './mock'
 import store from './store'
 import axios from 'axios'
 
+import 'viewerjs/dist/viewer.css'
+import Viewer from 'v-viewer'
+
+import VueVideoPlayer from 'vue-video-player'
+import 'video.js/dist/video-js.css'
+
+
 // http request 拦截器
 axios.interceptors.request.use(
     config => {
@@ -59,8 +66,8 @@ axios.interceptors.response.use(
 
 Vue.config.productionTip = false
 Vue.use(ElementUI)
-
-
+Vue.use(Viewer)
+Vue.use(VueVideoPlayer)
 if (localStorage.getItem('token'))
 	store.commit('setToken',localStorage.getItem('token'));
 if (localStorage.getItem('username'))

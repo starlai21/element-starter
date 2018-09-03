@@ -26,3 +26,11 @@ export const fetchPictures = params => {
 export const fetchLogs = params => {
 	return axios.get('/logs',  {params:params}).then(res => res.data).catch(res => res)
 };
+
+export const submitPassedData = () => {
+	return axios.post('/submit').then(res => res.data).catch(res => res)
+};
+
+export const sendSafeCode = params => {
+	return axios.get('/safeCode',{params:params}).then(res => res.data).catch(res => res)
+};

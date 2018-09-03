@@ -19,6 +19,9 @@
           <el-form-item>
             <el-button type="primary" @click="search">查询</el-button>
           </el-form-item>
+          <el-form-item>
+            <el-button type="success" @click="submitPassedData" :loading="submitLoading">一键提交</el-button>
+          </el-form-item>
               <el-button style="float: right; padding: 14px 0px" type="text" @click="searchForm.isVisible = !searchForm.isVisible">
                 <span v-if="searchForm.isVisible">折叠</span>
                 <span v-else>展开</span>
@@ -34,6 +37,9 @@
                 </el-form-item>
                 <el-form-item label="发展渠道" prop="channel"  style="margin-top:10px">
                   <el-input v-model="searchForm.channel"></el-input>
+                </el-form-item>
+                <el-form-item label="县分" prop="county"  style="margin-top:10px">
+                  <el-input v-model="searchForm.county"></el-input>
                 </el-form-item>
                 <el-form-item label="一证N户" prop="types">
                   <el-select v-model="searchForm.types" multiple placeholder="请选择类型" style="width: 100%" clearable>
@@ -102,6 +108,17 @@
           <el-tag v-else-if="stateFormatter(scope.row.state) ==='人工审核未通过'" type="danger">{{stateFormatter(scope.row.state)}}</el-tag>
           <el-tag v-else-if="stateFormatter(scope.row.state) ==='已重新取照-待二审'" >{{stateFormatter(scope.row.state)}}</el-tag>
           <el-tag v-else type="warning">{{stateFormatter(scope.row.state)}}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column
+        prop="submitted"
+        label="提交状态"
+        width="100" align="center"
+        >
+        <template slot-scope="scope">
+          <el-tag v-if="scope.row.submitted === 1" type="success">已提交</el-tag>
+          <el-tag v-else type="danger">未提交</el-tag>
+
         </template>
       </el-table-column>
 <!--       <el-table-column
@@ -260,6 +277,9 @@
                   <el-form-item label="身份证号:">
                     {{currentRow.id}}
                   </el-form-item>
+                  <el-form-item label="码上购:">
+                    {{currentRow.isMaShangGou | msgFormatter}}
+                  </el-form-item>
                   <el-form-item label="发展渠道:">
                     {{currentRow.channel}}
                   </el-form-item>
@@ -278,15 +298,19 @@
 
             <el-col :span="6" :offset="2" >
               <el-card :body-style="{ padding: '0px' }" v-loading="pictureLoading">
-                <img :src="livingPic(currentRow.pictures)" class="image">
+                <img :src="livingPic(currentRow.pictures)" class="image" v-viewer>
                 <div style="padding: 14px;">
-                  <span>现场照</span>
+                  <span>现场照 <template v-if="isLiving(currentRow.pictures)">(活体)</template></span> 
+                  <el-popover  trigger="click" v-show="isVideoExist(currentRow.pictures)">
+                    <video-player :options="playerOptions"></video-player>
+                    <el-button type="primary" style="padding:4px" icon="el-icon-view" slot="reference">查看视频</el-button>
+                  </el-popover>
                 </div>
               </el-card>
             </el-col>
             <el-col :span="6" :offset="2">
               <el-card :body-style="{ padding: '0px' }" v-loading="pictureLoading">
-                <img :src="idPic(currentRow.pictures)" class="image">
+                <img :src="idPic(currentRow.pictures)" class="image" v-viewer>
                 <div style="padding: 14px;">
                   <span>身份证照</span>
                 </div>
@@ -329,8 +353,8 @@
     margin-bottom: 10px;
   }
   .image {
-    width:323px;
-    height:323px;
+    width:360px;
+    height:360px;
   }
 
 
@@ -338,7 +362,7 @@
 
 <script>
 import moment from 'moment';
-import {fetchAuditedData, postAuditingForm, fetchLogs, fetchPictures} from '../api';
+import {fetchAuditedData, postAuditingForm, fetchLogs, fetchPictures, submitPassedData, sendSafeCode} from '../api';
 import {AuditMixin} from './mixins/AuditMixin'
   export default {
     mounted(){
@@ -379,7 +403,8 @@ import {AuditMixin} from './mixins/AuditMixin'
         pageSize: 8,
         logLoading: false,
         logs: [],
-        pictureLoading: false
+        pictureLoading: false,
+        submitLoading:false
 
 
 
@@ -437,13 +462,47 @@ import {AuditMixin} from './mixins/AuditMixin'
       auditDateFilterHandler(value, row, column) {
         return row.auditDate  === value;
       },
+      submitPassedData(){
+        this.submitLoading =  true;
+        submitPassedData().then(data => {
+          this.submitLoading = false;
+          this.$prompt('请输入验证码', '验证码将在几秒后发送到您的手机', {
+                   confirmButtonText: '确定',
+                   cancelButtonText: '取消',
+                 }).then(({ value }) => {
+                  this.submitLoading = true;
+                  sendSafeCode({safeCode:value}).then(data => {
+                    this.submitLoading = false;
+                    if (data){
+                      this.$message({
+                       type: 'success',
+                       message: '提交成功'
+                      });  
+                    }
+  
+                  }).catch(e => {
+                    this.submitLoading = false;
+                    console.log(e);
+                  });
+                 }).catch((e) => {
+                   this.$message({
+                     type: 'info',
+                     message: '取消输入'
+                   });       
+                 });
+
+        }).catch(e => {
+          this.submitLoading = false;
+          console.log(e);
+        })
+      },
       search(){
         this.$refs['searchForm'].validate((valid) => {
           if (valid) {
             this.isLoading = true;
             var params = {mobile: this.searchForm.mobile, types: this.searchForm.types, channel: this.searchForm.channel, 
                          startDate: this.searchForm.startDate, endDate: this.searchForm.endDate,
-                         specialTypes: this.searchForm.specialTypes, states: this.searchForm.states, updateFrom: this.searchForm.updateFrom, updateTo: this.searchForm.updateTo};
+                         specialTypes: this.searchForm.specialTypes, states: this.searchForm.states, updateFrom: this.searchForm.updateFrom, updateTo: this.searchForm.updateTo, county:this.searchForm.county};
             fetchAuditedData(params).then(data => {
               // console.log(data);
               this.tableData = data;

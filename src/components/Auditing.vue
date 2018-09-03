@@ -18,6 +18,9 @@
                 <el-form-item label="发展渠道" prop="channel"  style="margin-top:10px">
                   <el-input v-model="searchForm.channel"></el-input>
                 </el-form-item>
+                <el-form-item label="县分" prop="county"  style="margin-top:10px">
+                  <el-input v-model="searchForm.county"></el-input>
+                </el-form-item>
                 <el-form-item label="一证N户" prop="types">
                   <el-select v-model="searchForm.types" placeholder="请选择类型" style="width: 100%" multiple>
                     <el-option
@@ -53,6 +56,13 @@
                     </el-option>
                   </el-select>        
                 </el-form-item> 
+                <el-form-item label="码上购" prop="msg"  style="margin-top:10px">
+                  <el-switch
+                    v-model="searchForm.msg"
+                    active-text="是"
+                    inactive-text="否">
+                  </el-switch>
+                </el-form-item>
                 <el-form-item>
                   <el-button type="info" @click="clearForm('searchForm')">重置</el-button>
                   <el-button type="primary" @click="search">查询</el-button>
@@ -68,7 +78,8 @@
                 <el-tag type="info"  v-show="searchForm.channel != ''">发展渠道:{{searchForm.channel}} </el-tag>
                 <el-tag type="warning" v-show="searchForm.startDate != null">起始时间: {{searchForm.startDate | dateFormatter}}</el-tag>
                 <el-tag type="warning" v-show="searchForm.endDate != null">终止时间: {{searchForm.endDate | dateFormatter}}</el-tag>
-                <el-tag type="danger" v-show="searchForm.specialTypes.length > 0">靓号类型: <template v-for="t in searchForm.specialTypes">{{t}} </template></el-tag>
+                <el-tag type="danger" v-show="searchForm.specialTypes.length > 0">靓号类型: <template v-for="t in searchForm.specialTypes">{{t}} </template>
+                </el-tag>
               </div>                
 
             </el-card>
@@ -89,7 +100,7 @@
                   <el-tag v-else-if="auditing.state" type="danger">{{auditing.state}}</el-tag>
                   <el-tag v-else type="warning">未稽核</el-tag>
                 </div>
-                <el-form label-position="left" label-width="80px" id="userInfo">
+                <el-form label-position="left" label-width="100px" id="userInfo">
                   <el-form-item label="客户姓名:">
                     {{auditing.name}}
                   </el-form-item>
@@ -98,6 +109,9 @@
                   </el-form-item>
                   <el-form-item label="身份证号:">
                     {{auditing.id}}
+                  </el-form-item>
+                  <el-form-item label="码上购:">
+                    {{auditing.isMaShangGou | msgFormatter}}
                   </el-form-item>
                   <el-form-item label="发展渠道:">
                     {{auditing.channel}}
@@ -116,17 +130,23 @@
               </el-card> 
             </el-col>
 
+
+
             <el-col :span="6" :offset="2" >
               <el-card :body-style="{ padding: '0px' }" v-loading="pictureLoading">
-                <img :src="livingPic(auditing.pictures)" class="my-image">
+                <img :src="livingPic(auditing.pictures)" class="my-image" v-viewer>                
                 <div style="padding: 14px;">
-                  <span>现场照</span>
+                  <span>现场照 <template v-if="isLiving(auditing.pictures)">(活体)</template></span> 
+                  <el-popover  trigger="click" v-show="isVideoExist(auditing.pictures)">
+                    <video-player :options="playerOptions"></video-player>
+                    <el-button type="primary" style="padding:4px" icon="el-icon-view" slot="reference">查看视频</el-button>
+                  </el-popover>
                 </div>
               </el-card>
             </el-col>
             <el-col :span="6" :offset="2">
-              <el-card :body-style="{ padding: '0px' }" v-loding="pictureLoading">
-                <img :src="idPic(auditing.pictures)" class="my-image">
+              <el-card :body-style="{ padding: '0px' }" v-loading="pictureLoading">
+                <img :src="idPic(auditing.pictures)" class="my-image" v-viewer>
                 <div style="padding: 14px;">
                   <span>身份证照</span>
                 </div>
@@ -192,8 +212,8 @@
     margin-bottom: 0px;
   }
   .my-image {
-    width:323px;
-    height:323px;
+    width:360px;
+    height:360px;
   }
 
 
@@ -215,11 +235,7 @@ import {AuditMixin} from './mixins/AuditMixin'
         currentIndex: -1,
       };
     },
-// function insertArrayAt(array, index, arrayToInsert) {
-//     Array.prototype.splice.apply(array, [index, 0].concat(arrayToInsert));
-//     return array;
-// }var arrToInsert = ["x", "y", "z"];
-// insertArrayAt(arr, 1, arrToInsert);
+
   	methods: {	
     	search(){
       		this.$refs['searchForm'].validate((valid) => {
@@ -229,10 +245,10 @@ import {AuditMixin} from './mixins/AuditMixin'
 
                 var params = {mobile: this.searchForm.mobile, types: this.searchForm.types, channel: this.searchForm.channel, 
                              startDate: this.sDate, endDate: this.eDate,
-                             specialTypes: this.searchForm.specialTypes};
+                             specialTypes: this.searchForm.specialTypes, county: this.searchForm.county, msg:this.searchForm.msg};
                 
                fetchAuditingData(params).then(data => {
-                console.log(data);
+                // console.log(data);
                 // this.auditings = data.auditings;
                  this.auditings = data;
                  this.$set(this.page,'total',this.auditings.length);
@@ -331,7 +347,7 @@ import {AuditMixin} from './mixins/AuditMixin'
         if (!this.auditing.pictures){
           this.pictureLoading = true;
           fetchPictures({userUuid: this.auditing.uuid}).then(data => {
-            console.log(data);
+            // console.log(data);
             this.pictureLoading = false;
             this.$set(this.auditing, 'pictures', data);
             this.$set(this.auditings, this.currentIndex, this.auditing);

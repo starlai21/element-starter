@@ -17,6 +17,15 @@ var AuditMixin = {
   filters:{
     dateFormatter(date){
       return moment(date).format('l');
+    },
+    msgFormatter(data){
+      if (data){
+        if (data == 1)
+          return '是';
+        else
+          return '否'
+      }
+      return '否'
     }
   },
 	data(){
@@ -25,12 +34,14 @@ var AuditMixin = {
 	          mobile: '',
 	          types: [],
 	          channel: '',
+            county:'',
 	          startDate: null,
 	          endDate: null,
             updateFrom: null,
             updateTo: null,
 	          specialTypes: [],
 	          isVisible: true,
+            msg:false,
 	          bodyStyle:{
 	            padding: '0px'
 	          },
@@ -131,6 +142,15 @@ var AuditMixin = {
           total: 0,
           currentPage: 1
         },
+
+        playerOptions: {
+          width:'500',
+          height:"600",
+          sources: [{
+            type : "video/mp4",
+            src: "http://localhost:8088/living_videos/1.mp4"
+          }]
+        },
         successLoading:false,
         failureLoading:false,
         pictureLoading:false
@@ -164,28 +184,56 @@ var AuditMixin = {
         	}
 	    },
       livingPic(pictures){
-        
-        if (pictures && pictures.length >0 && (pictures.length === 2 || pictures[0].type === 0)){
+        // console.log(pictures)
+        if (pictures && pictures.length >0){
           var pic =  pictures.filter((c,i,a) => {
             return c.type === 0
           })
-          return pic[0].url;
+          if (pic.length != 0)
+            return pic[0].url;
         }
         return "https://dummyimage.com/600x400/000000/fff&text=default";
       },
       idPic(pictures){
-        
-        if (pictures && pictures.length > 0 && (pictures.length === 2 || pictures[0].type === 1)){
+        if (pictures && pictures.length > 0 ){
           var pic =  pictures.filter((c,i,a) => {
             return c.type === 1
           })
-          return pic[0].url;
+          if (pic.length != 0)
+            return pic[0].url;
         }
         return "https://dummyimage.com/600x400/000000/fff&text=default";
       },
       stateFormatter(state){
         let states = ["未审核","人工审核通过","人工审核未通过","县分已处理-已重拍-待重新取照","县分已处理-其他-待二审","已重新取照-待二审"];
         return states[state];
+      },
+      isVideoExist(pictures){
+        if (pictures && pictures.length > 0){
+          var pic =  pictures.filter((c,i,a) => {
+            return c.type === 2
+          })
+          
+          if (pic.length != 0){
+            this.$set(this.playerOptions, 'sources', [{
+              type : "video/mp4",
+              src: pic[0].url
+            }]);
+            return true;
+          }
+        }
+        return false;
+      },
+      isLiving(pictures){
+        if (pictures && pictures.length > 0){
+          var pic =  pictures.filter((c,i,a) => {
+            return c.living == 1
+          })
+
+          if (pic.length != 0)
+            return true;
+        }
+        return false;
       }
 	}
 }

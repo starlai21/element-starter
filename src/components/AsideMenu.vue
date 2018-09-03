@@ -33,14 +33,14 @@
               </el-menu-item-group>
 
           </el-submenu>
-          <el-menu-item index="3">
+<!--           <el-menu-item index="3">
             <i class="el-icon-star-off"></i>
             <span slot="title">我的收藏</span>
           </el-menu-item>
           <el-menu-item index="4">
             <i class="el-icon-search"></i>
             <span slot="title">客户资料查询</span>
-          </el-menu-item>
+          </el-menu-item> -->
         </el-menu>
     </div>
 </template>
