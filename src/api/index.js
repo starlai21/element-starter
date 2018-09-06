@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-axios.defaults.baseURL = 'http://10.21.114.6:8080';
+// axios.defaults.baseURL = 'http://10.202.46.40:8080';
+axios.defaults.baseURL = 'http://localhost:8080';
 
 axios.defaults.timeout = 8000;
 
@@ -33,4 +34,21 @@ export const submitPassedData = () => {
 
 export const sendSafeCode = params => {
 	return axios.get('/safeCode',{params:params}).then(res => res.data).catch(res => res)
+};
+
+
+export const fetchUndispatchedOrders = params => {
+	return axios.post('/undispatchedOrders',  params).then(res => res.data).catch(res => res)
+};
+
+export const fetchDispatchedOrders = params => {
+	return axios.post('/dispatchedOrders',  params).then(res => res.data).catch(res => res)
+};
+
+export const fetchDeliveryMen = params => {
+	return axios.get('/deliveryMen',{params:params}).then(res => res.data).catch(res => res)
+};
+
+export const fetchBusinessHalls = params => {
+	return axios.get('/businessHalls',{params:params}).then(res => res.data).catch(res => res)
 };

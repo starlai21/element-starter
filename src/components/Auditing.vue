@@ -46,7 +46,7 @@
                     </el-form-item>
                   </el-col>
                 </el-form-item>
-                <el-form-item label="靓号类型" prop="specialTypes">
+                <el-form-item label="靓号级别" prop="specialTypes">
                   <el-select v-model="searchForm.specialTypes" multiple placeholder="请选择类型" style="width: 100%">
                     <el-option
                       v-for="item in specialtyOptions"
@@ -137,7 +137,7 @@
                 <img :src="livingPic(auditing.pictures)" class="my-image" v-viewer>                
                 <div style="padding: 14px;">
                   <span>现场照 <template v-if="isLiving(auditing.pictures)">(活体)</template></span> 
-                  <el-popover  trigger="click" v-show="isVideoExist(auditing.pictures)">
+                  <el-popover  trigger="click" v-if="isVideoExist(auditing.pictures)">
                     <video-player :options="playerOptions"></video-player>
                     <el-button type="primary" style="padding:4px" icon="el-icon-view" slot="reference">查看视频</el-button>
                   </el-popover>

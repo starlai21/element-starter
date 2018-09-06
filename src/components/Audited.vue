@@ -51,7 +51,7 @@
                     </el-option>
                   </el-select>
                 </el-form-item>
-                <el-form-item label="靓号类型" prop="specialTypes">
+                <el-form-item label="靓号级别" prop="specialTypes">
                   <el-select v-model="searchForm.specialTypes" multiple placeholder="请选择类型" style="width: 100%" >
                     <el-option
                       v-for="item in specialtyOptions"
@@ -99,6 +99,7 @@
       style="width: 100%; margin-top:10px" border stripe @cell-click="cellClicked">
 
       <el-table-column
+        fixed
         prop="state"
         label="稽核结果"
         width="220" align="center"
@@ -219,6 +220,7 @@
           </template>
       </el-table-column> -->
       <el-table-column
+        fixed="right"
         label="操作"
         width="150" align="center">
         <template slot-scope="scope">
@@ -265,7 +267,7 @@
     <!-- reaudit dialog -->
 <el-dialog :title="currentRowState" :visible.sync="isReauditDialogVisible" width="80%"  :before-close="handleClose" id="audited">
           <el-row>
-            <el-col :span="6">
+            <el-col :span="8">
               <el-card :body-style="{ padding: '10px' }" >
                 <el-form label-position="left" label-width="80px" >
                   <el-form-item label="客户姓名:">
@@ -301,7 +303,7 @@
                 <img :src="livingPic(currentRow.pictures)" class="image" v-viewer>
                 <div style="padding: 14px;">
                   <span>现场照 <template v-if="isLiving(currentRow.pictures)">(活体)</template></span> 
-                  <el-popover  trigger="click" v-show="isVideoExist(currentRow.pictures)">
+                  <el-popover  trigger="click" v-if="isVideoExist(currentRow.pictures)">
                     <video-player :options="playerOptions"></video-player>
                     <el-button type="primary" style="padding:4px" icon="el-icon-view" slot="reference">查看视频</el-button>
                   </el-popover>
@@ -323,7 +325,7 @@
               <el-button type="success" style="padding: 16px" @click="onSubmit('success')" :loading="successLoading">通过</el-button>
             </el-col>       
 
-                <el-col :span="4" :offset="7">
+                <el-col :span="4" :offset="9">
                   <el-select v-model="violationValue" placeholder="实名违规" clearable>
                     <el-option
                       v-for="item in violationOptions"
@@ -350,7 +352,7 @@
 </template>
 <style type="text/css">
   #audited .el-form-item{
-    margin-bottom: 10px;
+    margin-bottom: 8px;
   }
   .image {
     width:360px;
@@ -478,6 +480,13 @@ import {AuditMixin} from './mixins/AuditMixin'
                        type: 'success',
                        message: '提交成功'
                       });  
+                    }
+                    else {
+                      this.$message({
+                       type: 'error',
+                       message: '验证码错误'
+                      });  
+                      this.submitPassedData()
                     }
   
                   }).catch(e => {

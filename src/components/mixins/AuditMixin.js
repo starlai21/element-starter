@@ -103,20 +103,23 @@ var AuditMixin = {
             }],
 
             specialtyOptions: [{
-              value: '1',
-              label: '1'
+              value: '第一类',
+              label: '第一类'
             },{
-              value: '2',
-              label: '2'
+              value: '第二类',
+              label: '第二类'
             },{
-              value: '3',
-              label: '3'
+              value: '第三类',
+              label: '第三类'
             },{
-              value: '4',
-              label: '4'
+              value: '第四类',
+              label: '第四类'
             },{
-              value: '5',
-              label: '5'
+              value: '第五类',
+              label: '第五类'
+            },{
+              value: '第六类',
+              label: '第六类'
             }],
 
 			statesOptions: [{
@@ -148,7 +151,7 @@ var AuditMixin = {
           height:"600",
           sources: [{
             type : "video/mp4",
-            src: "http://localhost:8088/living_videos/1.mp4"
+            src: ""
           }]
         },
         successLoading:false,

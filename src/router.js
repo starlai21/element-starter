@@ -2,6 +2,8 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Auditing from './components/Auditing.vue'
 import Audited from './components/Audited.vue'
+import Scheduling from './components/Scheduling.vue'
+import ScheduleQuery from './components/ScheduleQuery.vue'
 import Login from './components/Login.vue'
 import Home from './components/Home.vue'
 import store from './store'
@@ -22,6 +24,14 @@ const routes = [
       {
         path: 'audited',
         component: Audited
+      },
+      {
+        path: 'scheduling',
+        component: Scheduling
+      },
+      {
+        path: 'scheduleQuery',
+        component: ScheduleQuery
       }
     ]
 
