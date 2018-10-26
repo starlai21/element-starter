@@ -73,7 +73,10 @@ if (localStorage.getItem('token'))
 if (localStorage.getItem('username'))
 	store.commit('setUsername',localStorage.getItem('username'));
 
+var isAdmin = localStorage.getItem('isAdmin');
 
+if (isAdmin && JSON.parse(isAdmin))
+    store.commit('setIsAdmin', JSON.parse(isAdmin));
 new Vue({
   el: '#app',
   store: store,

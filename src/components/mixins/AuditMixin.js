@@ -1,4 +1,5 @@
 import moment from 'moment';
+// import { mapState } from 'vuex'
 var AuditMixin = {
   computed:{
     sDate(){
@@ -12,7 +13,10 @@ var AuditMixin = {
         return null;
       else
         return new Date(this.searchForm.endDate).getTime();
-    }
+    },
+    // ...mapState([
+    //     'isAdmin'
+    //     ])
   },
   filters:{
     dateFormatter(date){
@@ -26,6 +30,12 @@ var AuditMixin = {
           return '否'
       }
       return '否'
+    },
+    showPart(data){
+      if (data && data.length > 15)
+        return data.substr(0,15)+"...";
+      else
+        return data;
     }
   },
 	data(){
@@ -35,17 +45,21 @@ var AuditMixin = {
 	          types: [],
 	          channel: '',
             county:'',
+            entryDate:[],
+            updateDate:[],
 	          startDate: null,
 	          endDate: null,
             updateFrom: null,
             updateTo: null,
 	          specialTypes: [],
 	          isVisible: true,
-            msg:false,
+            msg:true,
+            needSpotCheck:false,
 	          bodyStyle:{
 	            padding: '0px'
 	          },
-	          states: []
+	          states: [],
+            adminStates: []
 	        },		
 	        violationOptions: [{
 	          value: '1',
@@ -151,12 +165,13 @@ var AuditMixin = {
           height:"600",
           sources: [{
             type : "video/mp4",
-            src: ""
+            src: "http://techslides.com/demos/sample-videos/small.mp4"
           }]
         },
         successLoading:false,
         failureLoading:false,
-        pictureLoading:false
+        pictureLoading:false,
+        downloadLoading:false
 		};
 	},
 	methods:{
@@ -197,10 +212,22 @@ var AuditMixin = {
         }
         return "https://dummyimage.com/600x400/000000/fff&text=default";
       },
-      idPic(pictures){
+
+      isIdPicLengthGt1(pictures){
+        if(pictures && pictures.length>0){
+          var pic =  pictures.filter((c,i,a) => {
+            return c.type === 3 || c.type ===4
+          })
+          if (pic.length != 0)
+            return true;
+        }
+        return false;
+
+      },
+      idPic(pictures, type=1){
         if (pictures && pictures.length > 0 ){
           var pic =  pictures.filter((c,i,a) => {
-            return c.type === 1
+            return c.type === type
           })
           if (pic.length != 0)
             return pic[0].url;
@@ -237,7 +264,11 @@ var AuditMixin = {
             return true;
         }
         return false;
-      }
+      },
+      dateFormatter(date){
+        moment.locale('zh-cn')
+        return moment(date).format('LL');
+      },
 	}
 }
 

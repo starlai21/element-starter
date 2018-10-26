@@ -1,7 +1,7 @@
 <template>
 	<div>
 		<el-row>
-            <el-card class="box-card" shadow="hover" :body-style="searchForm.bodyStyle">
+            <el-card shadow="hover" :body-style="searchForm.bodyStyle">
               <div slot="header" class="clearfix">
                 <span>查询条件</span>
                 <el-button style="float: right; padding: 3px 0" type="text" @click="toggleSearchForm">
@@ -18,7 +18,7 @@
                 <el-form-item label="发展渠道" prop="channel"  style="margin-top:10px">
                   <el-input v-model="searchForm.channel"></el-input>
                 </el-form-item>
-                <el-form-item label="县分" prop="county"  style="margin-top:10px">
+                <el-form-item label="县分" prop="county"  style="margin-top:10px" v-if="isAdmin">
                   <el-input v-model="searchForm.county"></el-input>
                 </el-form-item>
                 <el-form-item label="一证N户" prop="types">
@@ -32,7 +32,7 @@
 
                   </el-select>
                 </el-form-item>
-
+<!-- 
                 <el-form-item label="入网时间">
                   <el-col :span="11">
                     <el-form-item prop="startDate">
@@ -45,7 +45,8 @@
                       <el-date-picker   type="date" placeholder="终止时间" v-model="searchForm.endDate" style="width: 100%;" clearable></el-date-picker>
                     </el-form-item>
                   </el-col>
-                </el-form-item>
+                </el-form-item> -->
+
                 <el-form-item label="靓号级别" prop="specialTypes">
                   <el-select v-model="searchForm.specialTypes" multiple placeholder="请选择类型" style="width: 100%">
                     <el-option
@@ -56,6 +57,39 @@
                     </el-option>
                   </el-select>        
                 </el-form-item> 
+                 <el-form-item label="入网时间" prop="entryDate">
+                   <el-date-picker
+                    v-model="searchForm.entryDate"
+                    type="daterange"
+                    range-separator="至"
+                    start-placeholder="开始日期"
+                    end-placeholder="结束日期"
+                    :default-time="['00:00:00', '23:59:59']"
+                    style="width:100%;"
+                    >
+                  </el-date-picker>
+                 </el-form-item>
+              <template v-if="isAdmin">
+                <el-form-item label="稽核结果" prop="states">
+                  <el-select v-model="searchForm.states" multiple placeholder="县分稽核结果" style="width: 100%">
+                    <el-option
+                      v-for="item in statesOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value">
+                    </el-option>
+                  </el-select>        
+                </el-form-item>
+                <el-form-item label="稽核结果" prop="adminStates">
+                  <el-select v-model="searchForm.adminStates" multiple placeholder="市公司稽核结果" style="width: 100%">
+                    <el-option
+                      v-for="item in statesOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value">
+                    </el-option>
+                  </el-select>        
+                </el-form-item>
                 <el-form-item label="码上购" prop="msg"  style="margin-top:10px">
                   <el-switch
                     v-model="searchForm.msg"
@@ -63,6 +97,14 @@
                     inactive-text="否">
                   </el-switch>
                 </el-form-item>
+                <el-form-item label="需要抽查" prop="needSpotCheck"  style="margin-top:10px">
+                  <el-switch
+                    v-model="searchForm.needSpotCheck"
+                    active-text="是"
+                    inactive-text="否">
+                  </el-switch>
+                </el-form-item>
+              </template>
                 <el-form-item>
                   <el-button type="info" @click="clearForm('searchForm')">重置</el-button>
                   <el-button type="primary" @click="search">查询</el-button>
@@ -94,9 +136,21 @@
 <!--               <el-progress :text-inside="true" :stroke-width="18" :percentage="70"></el-progress> -->
 
               <el-card :body-style="{ padding: '13px' }" >
-                <div slot="header">
+                <div slot="header" v-if="isAdmin">
                   稽核状态:  &nbsp 
-                  <el-tag v-if="auditing.state && auditing.state === '人工审核通过'" type="success">{{auditing.state}}</el-tag>
+                  <el-tag v-if="auditing.state && auditing.state === 1" type="success">人工审核通过|县分</el-tag>
+                  <el-tag v-else-if="auditing.state && auditing.state !== 2" type="danger">{{auditing.state}}|县分</el-tag>
+                  <el-tag v-else-if="auditing.state && auditing.state === 2" type="danger">人工审核未通过|县分</el-tag>
+                  <el-tag v-else type="warning">未稽核|县分</el-tag>
+
+                  <el-tag v-if="auditing.adminStatus && auditing.adminStatus === 1" type="success">人工审核通过|市公司</el-tag>
+                  <el-tag v-else-if="auditing.adminStatus && auditing.adminStatus !== 2" type="danger">{{auditing.adminStatus}}|市公司</el-tag>
+                  <el-tag v-else-if="auditing.adminStatus && auditing.adminStatus === 2" type="danger">人工审核未通过|市公司</el-tag>
+                  <el-tag v-else type="warning">未稽核|市公司</el-tag>
+                </div>
+                <div slot="header" v-else>
+                  稽核状态:  &nbsp 
+                  <el-tag v-if="auditing.state && auditing.state === 1" type="success">人工审核通过</el-tag>
                   <el-tag v-else-if="auditing.state" type="danger">{{auditing.state}}</el-tag>
                   <el-tag v-else type="warning">未稽核</el-tag>
                 </div>
@@ -114,7 +168,7 @@
                     {{auditing.isMaShangGou | msgFormatter}}
                   </el-form-item>
                   <el-form-item label="发展渠道:">
-                    {{auditing.channel}}
+                    {{auditing.channel | showPart}}
                   </el-form-item>
                   <el-form-item label="入网时间:">
                     {{auditing.entryDate | dateFormatter}}
@@ -133,11 +187,11 @@
 
 
             <el-col :span="6" :offset="2" >
-              <el-card :body-style="{ padding: '0px' }" v-loading="pictureLoading">
+              <el-card :body-style="{ padding: '0px' }" v-loading="pictureLoading" class="box-card">
                 <img :src="livingPic(auditing.pictures)" class="my-image" v-viewer>                
                 <div style="padding: 14px;">
                   <span>现场照 <template v-if="isLiving(auditing.pictures)">(活体)</template></span> 
-                  <el-popover  trigger="click" v-if="isVideoExist(auditing.pictures)">
+                  <el-popover  trigger="click" v-show="isVideoExist(auditing.pictures)">
                     <video-player :options="playerOptions"></video-player>
                     <el-button type="primary" style="padding:4px" icon="el-icon-view" slot="reference">查看视频</el-button>
                   </el-popover>
@@ -145,9 +199,18 @@
               </el-card>
             </el-col>
             <el-col :span="6" :offset="2">
-              <el-card :body-style="{ padding: '0px' }" v-loading="pictureLoading">
-                <img :src="idPic(auditing.pictures)" class="my-image" v-viewer>
-                <div style="padding: 14px;">
+              <el-card :body-style="{ padding: '0px' }" v-loading="pictureLoading" class="box-card">
+                <div>
+                  <template v-if="isIdPicLengthGt1(auditing.pictures)">
+                    <img :src="idPic(auditing.pictures)" class="id-image-first" v-viewer>
+                    <img :src="idPic(auditing.pictures,4)" class="id-image" v-viewer>
+                    <img :src="idPic(auditing.pictures,3)" class="id-image" v-viewer>
+                  </template>
+                  <template v-else>
+                    <img :src="idPic(auditing.pictures)" class="my-image" v-viewer>
+                  </template>
+                </div>
+                <div style="padding: 14px; ">
                   <span>身份证照</span>
                 </div>
               </el-card>
@@ -203,7 +266,7 @@
     </div>
 </template>
 
-<style type="text/css">
+<style type="text/css" scoped>
   .el-row {
     margin:5px;
   }
@@ -212,8 +275,22 @@
     margin-bottom: 0px;
   }
   .my-image {
-    width:360px;
+    width:100%;
     height:360px;
+  }
+
+  .id-image{
+    width:49%;
+    height:155px;
+  }
+  .id-image-first{
+    width:100%;
+    height:200px;
+  }
+
+  .box-card{
+    width: 100%;
+    height: 100%;
   }
 
 
@@ -223,10 +300,15 @@
 import moment from 'moment';
 import {fetchAuditingData,postAuditingForm, fetchPictures} from '../api';
 import {AuditMixin} from './mixins/AuditMixin'
+// import { mapState } from 'vuex'
 
 	export default {
     mixins: [AuditMixin],
-
+    computed:{
+      isAdmin(){
+        return this.$store.state.isAdmin;
+      }
+    },
     data(){
       return {
         isAuditUIVisible: false,
@@ -240,13 +322,21 @@ import {AuditMixin} from './mixins/AuditMixin'
     	search(){
       		this.$refs['searchForm'].validate((valid) => {
 	        	if (valid) {
-               this.isLoading = true;
-               this.isAuditUIVisible =true;
+              this.isLoading = true;
+              this.isAuditUIVisible =true;
+              if (this.searchForm.entryDate && this.searchForm.entryDate.length == 2){
+                this.searchForm.startDate = this.searchForm.entryDate[0];
+                this.searchForm.endDate = this.searchForm.entryDate[1];
+              }
+              else{
+                this.searchForm.startDate = null;
+                this.searchForm.endDate = null;
+              }
 
-                var params = {mobile: this.searchForm.mobile, types: this.searchForm.types, channel: this.searchForm.channel, 
-                             startDate: this.sDate, endDate: this.eDate,
-                             specialTypes: this.searchForm.specialTypes, county: this.searchForm.county, msg:this.searchForm.msg};
-                
+              var params = {mobile: this.searchForm.mobile, types: this.searchForm.types, channel: this.searchForm.channel, states:this.searchForm.states, 
+                              adminStates: this.searchForm.adminStates, startDate: this.searchForm.startDate, endDate: this.searchForm.endDate,
+                             specialTypes: this.searchForm.specialTypes, county: this.searchForm.county, msg:this.searchForm.msg, needSpotCheck:this.searchForm.needSpotCheck};
+               console.log(params) 
                fetchAuditingData(params).then(data => {
                 // console.log(data);
                 // this.auditings = data.auditings;
@@ -305,6 +395,8 @@ import {AuditMixin} from './mixins/AuditMixin'
         }
         else
           this.failureLoading=true;
+
+
         var params = {state: state, note: this.note, type: type, uuid: this.auditing.uuid, idPicUuid:"", livingPicUuid:"",
                       subscriptionId: this.auditing.subscriptionId};
         postAuditingForm(params).then(data => {
@@ -318,13 +410,19 @@ import {AuditMixin} from './mixins/AuditMixin'
           this.failureLoading = false;
          var des = '';
          if (state === 1)
-           des = "人工审核通过";
+           des = 1;
          else
            des = this.violationOptions.find((obj) => obj.value === this.violationValue).label;
           // des = this.violationOptions[parseInt(this.violationValue)-1].label;
           this.resetAuditForm();
 
-         this.$set(this.auditing, 'state', des);
+          if (this.isAdmin){
+            this.$set(this.auditing, 'adminStatus', des);
+          }
+          else{
+            this.$set(this.auditing, 'state', des);
+          }
+         
          this.$set(this.auditings, this.currentIndex, this.auditing);
          if (this.page.currentPage < this.page.total){
            this.$set(this.page,'currentPage', this.page.currentPage+1);

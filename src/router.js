@@ -25,14 +25,14 @@ const routes = [
         path: 'audited',
         component: Audited
       },
-      {
-        path: 'scheduling',
-        component: Scheduling
-      },
-      {
-        path: 'scheduleQuery',
-        component: ScheduleQuery
-      }
+      // {
+      //   path: 'scheduling',
+      //   component: Scheduling
+      // },
+      // {
+      //   path: 'scheduleQuery',
+      //   component: ScheduleQuery
+      // }
     ]
 
   },

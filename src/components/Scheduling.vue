@@ -22,11 +22,11 @@
             <el-button type="primary" @click="search">查询</el-button>
           </el-form-item>
           <el-form-item>
-            <el-button @click="submitPassedData" :loading="submitLoading">同步数据</el-button>
+            <el-button  :loading="submitLoading">同步数据</el-button>
           </el-form-item>
-          <el-form-item>
+<!--           <el-form-item>
             <el-button type="success" @click="submitPassedData" :loading="submitLoading">一键提交</el-button>
-          </el-form-item>
+          </el-form-item> -->
               <el-button style="float: right; padding: 14px 0px" type="text" @click="searchForm.isVisible = !searchForm.isVisible">
                 <span v-if="searchForm.isVisible">折叠</span>
                 <span v-else>展开</span>
@@ -56,6 +56,16 @@
                     </el-option>
                   </el-select>
                 </el-form-item>
+                <el-form-item label="年龄" prop="age">
+                  <el-select v-model="searchForm.age" placeholder="请选择类型" style="width: 100%" clearable>
+                    <el-option
+                      v-for="item in searchForm.ageOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value">
+                    </el-option>
+                  </el-select>
+                </el-form-item>
                 <el-form-item label="收货地址" prop="shippingAddress"  style="margin-top:10px">
                   <el-input v-model="searchForm.shippingAddress"></el-input>
                 </el-form-item>
@@ -79,8 +89,10 @@
         >
         <template slot-scope="scope">
           <p>
-            订单编号: {{scope.row.orderNumber}}  <el-tag type="success" v-if="scope.row.submitted === 1">已提交</el-tag>
-            <el-tag type="danger" v-else>未提交</el-tag>
+            订单编号: {{scope.row.orderNumber}}  <!-- <el-tag type="success" v-if="scope.row.submitted === 1">已提交</el-tag>
+            <el-tag type="danger" v-else>未提交</el-tag> -->
+            <el-tag type="danger" v-if="scope.row.isAbove16 === 1">未满16周岁</el-tag>
+
           </p>
           <p>成交时间: {{dateFormatter(scope.row.orderDate) }}</p>
           <p style="color: red">下单时间: {{fromNow(scope.row.orderDate)}}</p>
@@ -91,7 +103,7 @@
         width="250" align="center"
         >
         <template slot-scope="scope">
-          <p>调度原因: {{scope.row.scheduleReason}}</p>
+          <p>调度原因: {{scope.row.scheduleReasonDetail}}</p>
           <p>派单状态: {{scope.row.dispatchStatus}}</p>
         </template>
       </el-table-column>
@@ -225,7 +237,7 @@
     <el-row>
       
         <p style="text-align:right" v-if="currentDeliveryManRow.name">您选择了 {{currentDeliveryManRow.name}}
-          <el-button type="primary" style="padding:5px">确认</el-button>
+          <el-button type="primary" style="padding:5px" @click="sendDropIn">确认</el-button>
         </p>
         <p style="text-align:right" v-else>您还未选择派送员</p>
       </el-col>
@@ -319,7 +331,7 @@
     <el-row>
       
         <p style="text-align:right" v-if="currentBusinessHallRow.name">您选择了 {{currentBusinessHallRow.name}}
-          <el-button type="primary" style="padding:5px">确认</el-button>
+          <el-button type="primary" style="padding:5px" @click="sendSelfLifting">确认</el-button>
         </p>
         <p style="text-align:right" v-else>您还未选择营业厅</p>
       </el-col>
@@ -353,7 +365,7 @@
     </el-form-item>
     <el-form-item>
       <el-button @click="closeReviewDialog">关闭</el-button>
-      <el-button  type="primary">提交</el-button>
+      <el-button  type="primary" @click="sendReview">提交</el-button>
     </el-form-item>
 
   </el-form>
@@ -378,7 +390,7 @@
 
 <script>
 import moment from 'moment';
-import {fetchAuditedData, postAuditingForm, submitPassedData, sendSafeCode, fetchUndispatchedOrders, fetchDeliveryMen, fetchBusinessHalls} from '../api';
+import { submitPassedData, sendSafeCode, fetchUndispatchedOrders, fetchDeliveryMen,fetchBusinessHalls, sendDropIn,sendSelfLifting, sendReview} from '../api';
 import {AuditMixin} from './mixins/AuditMixin'
   export default {
     mounted(){
@@ -414,6 +426,7 @@ import {AuditMixin} from './mixins/AuditMixin'
         businessHalls:[],
         tableData: [],
         isDropInDialogVisible: false,
+        isLoading:false,
 
         isSelfLiftingDialogVisible: false,
 
@@ -510,9 +523,37 @@ import {AuditMixin} from './mixins/AuditMixin'
               label:'--请选择--'
             },
             {
-              value:'2',
-              value:'2'
-            }
+              value:'无匹配网格',
+              label:'无匹配网格'
+            },
+            {
+              value:'区县网格内无人接单',
+              label:'区县网格内无人接单'
+            },
+            {
+              value:'数据/服务异常',
+              label:'数据/服务异常'
+            },
+            {
+              value:'派单员回退',
+              label:'派单员回退'
+            },
+            {
+              value:'营业厅回退',
+              label:'营业厅回退'
+            },
+            {
+              value:'超时自动回退',
+              label:'超时自动回退'
+            },
+            {
+              value:'调度员超时',
+              label:'调度员超时'
+            },
+            {
+              value:'其他原因',
+              label:'其他原因'
+            },
           ],
           dispatchStatus:null,
           dispatchStatusOptions:[{
@@ -525,6 +566,18 @@ import {AuditMixin} from './mixins/AuditMixin'
             value:'再次派单',
             label:'再次派单'
           }],
+
+          age: null,
+          ageOptions:[{
+            value:null,
+            label:'--请选择--'
+          },{
+            value:1,
+            label:'16岁以下',
+          },{
+            value:0,
+            label:'16岁及以上'
+          }],
           shippingAddress:''
         },
 
@@ -535,42 +588,75 @@ import {AuditMixin} from './mixins/AuditMixin'
     },
     methods: {
       handleDeliveryRowChange(val){
+        if (val == null)
+          val = []
         this.currentDeliveryManRow = val;
       },
       handleHallRowChange(val){
+        if (val == null)
+          val = []
         this.currentBusinessHallRow = val;
       },
-      send(state){
-        var type = this.violationValue
-        if (state === 1){
-          type = 0
-          this.successLoading = true;
-        }
-        else
-          this.failureLoading = true;
-        var params = {state: state, note: this.note, type: type, uuid: this.currentRow.uuid, idPicUuid:"", livingPicUuid:"",
-                      subscriptionId: this.currentRow.subscriptionId};
-        postAuditingForm(params).then(data => {
+      sendDropIn(){
+        var params = {orderId: this.currentRow.orderId, phone:this.currentDeliveryManRow.phone, type:'courier' };
+        sendDropIn(params).then(data => {
 
-          this.currentRow.state = state;
+          console.log(data);
 
-          this.$set(this.tableData, this.currentRow.index, this.currentRow)
+          // this.$set(this.tableData, this.currentRow.index, this.currentRow)
           this.$message({
             type: 'success',
             message: '提交成功!',
             duration: 3000
           });
-          this.successLoading = false;
-          this.failureLoading = false;
+          this.isLoading = false;
         }).catch(e => {
+          this.isLoading = false;
           console.log(e);
         })
-        this.resetAuditForm();
-
-        this.isDropInDialogVisible = false;
-
+        this.closeDropInDialog();
       },
+      sendSelfLifting(){
+        var params = {orderId: this.currentRow.orderId, phone:this.currentBusinessHallRow.phone, type:'selfLifting' };
+        sendDropIn(params).then(data => {
 
+          console.log(data);
+
+          // this.$set(this.tableData, this.currentRow.index, this.currentRow)
+          this.$message({
+            type: 'success',
+            message: '提交成功!',
+            duration: 3000
+          });
+          this.isLoading = false;
+        }).catch(e => {
+          this.isLoading = false;
+          console.log(e);
+        })
+        this.closeSelfLiftingDialog();
+      },
+      sendReview(){
+        var radios = ['用户要求转物流','用户要求退单','联系不上用户','证件信息不一致','其他'];
+
+        
+        var params = {orderId: this.currentRow.orderId,  reason: radios[this.reviewRadio-1]};
+        sendReview(params).then(data => {
+
+          console.log(data);
+
+          // this.$set(this.tableData, this.currentRow.index, this.currentRow)
+          this.$message({
+            type: 'success',
+            message: '提交成功!',
+            duration: 3000
+          });
+          this.isLoading = false;
+        }).catch(e => {
+          this.isLoading = false;
+          console.log(e);
+        })
+        this.closeReviewDialog();
+      },
       fromNow(date){
         moment.locale('zh-cn');
         return moment(date).fromNow();
@@ -634,7 +720,7 @@ import {AuditMixin} from './mixins/AuditMixin'
 
             var params = {region:this.searchForm.region[1], orderNumber: this.searchForm.orderNumber, 
                           shippingAddress: this.searchForm.shippingAddress, dispatchStatus: this.searchForm.dispatchStatus,
-                          dispatchReason: this.searchForm.scheduleReason};
+                          dispatchReason: this.searchForm.scheduleReason, age:this.searchForm.age};
             fetchUndispatchedOrders(params).then(data => {
               // console.log(data);
               this.tableData = data;
@@ -688,10 +774,11 @@ import {AuditMixin} from './mixins/AuditMixin'
             })  
       },
       searchHalls(){
-
+            // this.$refs.businessHall.setCurrentRow(null);
             this.hallLoading = true;
             fetchBusinessHalls({nameOrPrincipalOrPhone:this.nameOrPrincipalOrPhone}).then(data => {
               this.businessHalls = data;
+              console.log(this.businessHalls[0])
               this.$set(this.businessHallPage,'total',this.businessHalls.length);
               if (this.businessHalls.length>0){
                 this.$set(this.businessHallPage,'currentPage',1);
@@ -704,8 +791,10 @@ import {AuditMixin} from './mixins/AuditMixin'
                   duration: 3000
                 });
               }
+              
               this.hallLoading = false;
             }).catch(e => {
+              // this.$refs.businessHall.setCurrentRow(null);
               this.hallLoading = false;
               console.log(e);
             })  

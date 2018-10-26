@@ -22,11 +22,11 @@
             <el-button type="primary" @click="search">查询</el-button>
           </el-form-item>
           <el-form-item>
-            <el-button @click="submitPassedData" :loading="submitLoading">同步数据</el-button>
+            <el-button  :loading="submitLoading">同步数据</el-button>
           </el-form-item>
-          <el-form-item>
+<!--           <el-form-item>
             <el-button @click="submitPassedData" :loading="submitLoading">一键提交</el-button>
-          </el-form-item>
+          </el-form-item> -->
               <el-button style="float: right; padding: 14px 0px" type="text" @click="searchForm.isVisible = !searchForm.isVisible">
                 <span v-if="searchForm.isVisible">折叠</span>
                 <span v-else>展开</span>
@@ -104,8 +104,7 @@
         >
         <template slot-scope="scope">
           <p>
-            订单编号: {{scope.row.orderNumber}}  <el-tag type="success" v-if="scope.row.submitted === 1">已提交</el-tag>
-            <el-tag type="danger" v-else>未提交</el-tag>
+            订单编号: {{scope.row.orderNumber}}  
           </p>
           <p>成交时间: {{dateFormatter(scope.row.orderDate)}}</p>
           <p>订单区域: {{scope.row.orderRegion}}</p>
@@ -139,7 +138,7 @@
         label="操作"
          align="center">
         <template slot-scope="scope">
-          <el-button type="danger" @click="reaudit(scope.row,scope.$index)">撤回</el-button>
+          <el-button type="danger" @click="withdraw(scope.row,scope.$index)">撤回</el-button>
           <el-button @click="viewDetail(scope.row.orderId)">详情</el-button>
         </template>
       </el-table-column>  
@@ -162,10 +161,21 @@
       </el-pagination>
     </el-row>
 
-    <!-- reaudit dialog -->
-<el-dialog :title="currentRowState" :visible.sync="isReauditDialogVisible" width="80%"  :before-close="handleClose" id="audited">
-          
+    <!-- withdraw dialog -->
+<el-dialog title="请填写重回审单原因" :visible.sync="isDialogVisible" width="40%"  :before-close="handleClose" id="audited" :close-on-click-modal="false">
+  <el-form>
+    <el-form-item>
+        <el-input v-model="reason" placeholder="填写撤回原因，50字以内"></el-input>
+    </el-form-item>
+    <el-form-item>
+      <!-- <el-button @click="closeDialog">关闭</el-button> -->
+      <el-button  type="primary" @click="sendWithdraw">提交</el-button>
+    </el-form-item>
+
+  </el-form>       
 </el-dialog>
+
+
 
   </div>
 
@@ -186,12 +196,12 @@
 
 <script>
 import moment from 'moment';
-import {fetchAuditedData, postAuditingForm, fetchLogs, fetchPictures, submitPassedData, sendSafeCode, fetchDispatchedOrders} from '../api';
+import {submitPassedData, sendSafeCode, fetchDispatchedOrders, sendWithdraw} from '../api';
 import {AuditMixin} from './mixins/AuditMixin'
   export default {
     mounted(){
       this.searchForm.isVisible = false;
-      // this.search();
+      this.search();
     },
     mixins: [AuditMixin],
     computed: {
@@ -205,7 +215,7 @@ import {AuditMixin} from './mixins/AuditMixin'
     data() {
       return {
         tableData: [],
-        isReauditDialogVisible: false,
+        isDialogVisible: false,
         currentRowState: "原稽核结果为: ",
         currentRow: [],
         pageSize: 5,
@@ -213,6 +223,8 @@ import {AuditMixin} from './mixins/AuditMixin'
         logs: [],
         pictureLoading: false,
         submitLoading:false,
+
+        reason:'',
 
         searchForm:{
           region:['温州',null],
@@ -320,34 +332,25 @@ import {AuditMixin} from './mixins/AuditMixin'
         var href='http://admin.mall.10010.com/Odm/Sell/Order/OrderDetails?orderId='+orderId+'&orderType=1'
         window.open(href, '_blank');
       },
-      send(state){
-        var type = this.violationValue
-        if (state === 1){
-          type = 0
-          this.successLoading = true;
-        }
-        else
-          this.failureLoading = true;
-        var params = {state: state, note: this.note, type: type, uuid: this.currentRow.uuid, idPicUuid:"", livingPicUuid:"",
-                      subscriptionId: this.currentRow.subscriptionId};
-        postAuditingForm(params).then(data => {
+      sendWithdraw(){
 
-          this.currentRow.state = state;
+        var params = {orderId:this.currentRow.orderId, reason:this.reason};
+        sendWithdraw(params).then(data => {
 
-          this.$set(this.tableData, this.currentRow.index, this.currentRow)
+
+          // this.$set(this.tableData, this.currentRow.index, this.currentRow)
           this.$message({
             type: 'success',
             message: '提交成功!',
             duration: 3000
           });
-          this.successLoading = false;
-          this.failureLoading = false;
+
         }).catch(e => {
           console.log(e);
         })
-        this.resetAuditForm();
 
-        this.isReauditDialogVisible = false;
+
+        this.isDialogVisible = false;
 
       },
 
@@ -436,12 +439,10 @@ import {AuditMixin} from './mixins/AuditMixin'
           }
         });
       },
-      reaudit(row, index){
+      withdraw(row, index){
         this.currentRow = row;
         this.currentRow.index = index;
-        this.currentRowState = "原稽核结果为: " + this.stateFormatter(row.state);
-        this.fetchPictures();
-        this.isReauditDialogVisible = true;
+        this.isDialogVisible = true;
       },
       handleClose(done) {
         if (this.note == '' && this.violationValue == '')
@@ -461,7 +462,8 @@ import {AuditMixin} from './mixins/AuditMixin'
       handleCurrentChange(val) {
         console.log(`当前页: ${val}`);
         this.$set(this.page,'currentPage',val);
-      }
+      },
+      
     }
   }
 </script>

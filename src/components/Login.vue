@@ -6,16 +6,19 @@
 
   <el-row>
   <el-col :span="6" :offset="9" style="margin-top:100px">
-  <el-card class="box-card">
+  <el-card >
     <el-form ref="accountForm" :model="account" :rules="rules" label-position="left" label-width="0px"
              class="demo-ruleForm ">
-      <h3 class="title">中国联通  Awesome系统</h3>
+      <h3 class="title">温州联通 实名制稽核系统</h3>
       <el-form-item prop="username">
         <el-input type="text" v-model="account.username" auto-complete="off" placeholder="账号"></el-input>
       </el-form-item>
-      <el-form-item prop="pwd">
+      <el-form-item prop="password">
         <el-input type="password" v-model="account.password" auto-complete="off" placeholder="密码"></el-input>
       </el-form-item>
+<!--       <el-form-item prop="safetyCode">
+        <el-input type="text" v-model="account.safetyCode" auto-complete="off" placeholder="请输入验证码"></el-input><el-button @click="getSafetyCode" :loading="isLoading">获取验证码</el-button>
+      </el-form-item> -->
       <el-form-item style="width:100%;">
         <el-button type="primary" style="width:100%;" @click="login">登录</el-button>
       </el-form-item>
@@ -36,7 +39,7 @@
 
 <script>
 
-import {requestLogin} from '../api';
+import {requestLogin, submitPassedData, isAdmin} from '../api';
 import particles from 'particles.js'
 
 
@@ -172,7 +175,8 @@ export default {
         isLoading: false,
         account: {
           username: '',
-          password: ''
+          password: '',
+          safetyCode:''
         },
         rules: {
           username: [
@@ -182,7 +186,11 @@ export default {
           password: [
             {required: true, message: '请输入密码', trigger: 'blur'},
             //{ validator: validaePass2 }
-          ]
+          ],
+          safetyCode: [
+            {required: true, message: '请输入验证码', trigger: 'blur'},
+            //{ validator: validaePass2 }
+          ],
         },
       };
   },
@@ -193,18 +201,33 @@ export default {
           this.isLoading = true;
           var loginParams = {username: this.account.username, password: this.account.password};
           requestLogin(loginParams).then(res => {
-
             this.isLoading = false;
             let {msg, code, data} = res;
             if(code == 200){
               this.$store.commit('setToken', data);
               this.$store.commit("setUsername", this.account.username);
-              this.$message({
-                message: '欢迎回来',
-                type: 'success'
-              });
 
-              this.$router.push({path:'/'});
+              isAdmin().then(res => {
+
+                this.$store.commit("setIsAdmin", res);
+                var welcomeMsg = "欢迎回来";
+                if (res){
+                  welcomeMsg = welcomeMsg+", 管理员"
+                } 
+                this.$message({
+                  message: welcomeMsg,
+                  type: 'success'
+                }); 
+
+                this.$router.push({path:'/'});
+              }).catch(e => console.log(e));
+
+              // this.$message({
+              //   message: '欢迎回来',
+              //   type: 'success'
+              // });
+
+              // this.$router.push({path:'/'});
             }
             else {
               this.$message({
@@ -219,6 +242,24 @@ export default {
           return false;
         }
       })
+    },
+    getSafetyCode(){
+      if (this.username != '' && this.password != ''){
+        this.isLoading = true;
+        submitPassedData().then(data => {
+        this.$message({
+                message: '验证码将在几秒后发送到您的手机',
+                type: 'success'
+              });
+          this.isLoading = false;
+        }).catch(e => {
+          this.isLoading = false;
+          console.log(e);
+        })
+      }
+      else{
+
+      }
     }
   }
 }
