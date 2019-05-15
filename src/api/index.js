@@ -1,9 +1,13 @@
 import axios from 'axios';
 
+//服务器
 axios.defaults.baseURL = 'http://10.202.46.40:8080';
 // axios.defaults.baseURL = 'http://localhost:8080';
+// axios.defaults.baseURL = 'http://10.21.114.215:8080';
 
-axios.defaults.timeout = 18000;
+
+
+axios.defaults.timeout = 158000;
 
 
 
@@ -11,6 +15,7 @@ axios.defaults.timeout = 18000;
 
 export const requestLogin = params => { return axios.post('/auth/login', params).then(res => res.data)};
 
+export const requestChangePassword = params => { return axios.post('/auth/changePassword', params).then(res => res.data)};
 
 export const isAdmin = params => {
 	return axios.get('/isAdmin',{params:params}).then(res => res.data).catch(res => res)

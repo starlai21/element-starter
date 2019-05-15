@@ -331,8 +331,8 @@
                   <el-form-item label="身份证号:">
                     {{currentRow.id}}
                   </el-form-item>
-                  <el-form-item label="码上购:">
-                    {{currentRow.isMaShangGou | msgFormatter}}
+                  <el-form-item label="系统来源:">
+                    {{currentRow | msgFormatter}}
                   </el-form-item>
                   <el-form-item label="发展渠道:">
                     {{currentRow.channel | showPart}}
@@ -345,6 +345,9 @@
                   </el-form-item>
                   <el-form-item label="靓号类型:">
                     {{currentRow.specialType}}
+                  </el-form-item>
+                  <el-form-item label="县分:" v-if="isAdmin">
+                    {{currentRow.countyId}}
                   </el-form-item>
                 </el-form>
               </el-card> 
@@ -608,37 +611,53 @@ import {AuditMixin} from './mixins/AuditMixin'
         this.submitLoading =  true;
         submitPassedData().then(data => {
           this.submitLoading = false;
-          this.$prompt('请输入验证码', '验证码将在几秒后发送到您的手机', {
-                   confirmButtonText: '确定',
-                   cancelButtonText: '取消',
-                 }).then(({ value }) => {
-                  this.submitLoading = true;
-                  sendSafeCode({safeCode:value}).then(data => {
-                    this.submitLoading = false;
-                    if (data){
-                      this.$message({
-                       type: 'success',
-                       message: '提交成功'
-                      });  
-                    }
-                    else {
-                      this.$message({
-                       type: 'error',
-                       message: '验证码错误'
-                      });  
-                      this.submitPassedData()
-                    }
-  
-                  }).catch(e => {
-                    this.submitLoading = false;
-                    console.log(e);
-                  });
-                 }).catch((e) => {
-                   this.$message({
-                     type: 'info',
-                     message: '取消输入'
-                   });       
-                 });
+          if (data == 0){
+            this.$prompt('请输入验证码', '验证码将在几秒后发送到您的手机', {
+                     confirmButtonText: '确定',
+                     cancelButtonText: '取消',
+                   }).then(({ value }) => {
+                    this.submitLoading = true;
+                    sendSafeCode({safeCode:value}).then(data => {
+                      this.submitLoading = false;
+                      if (data){
+                        this.$message({
+                         type: 'success',
+                         message: '提交成功'
+                        });  
+                      }
+                      else {
+                        this.$message({
+                         type: 'error',
+                         message: '验证码错误'
+                        });  
+                        this.submitPassedData()
+                      }
+    
+                    }).catch(e => {
+                      this.submitLoading = false;
+                      console.log(e);
+                    });
+                   }).catch((e) => {
+                     this.$message({
+                       type: 'info',
+                       message: '取消输入'
+                     });       
+                   });
+          }
+          else if (data == -1){
+            this.$message({
+              type: 'error',
+              message: '验证码获取失败'
+            });
+          }
+          else if (data == 1){
+            this.$message({
+              type: 'error',
+              message: '数据提交中，请不要频繁获取验证码'
+            });
+          }
+
+
 
         }).catch(e => {
           this.submitLoading = false;
@@ -779,7 +798,7 @@ import {AuditMixin} from './mixins/AuditMixin'
         this.downloadLoading = true;
         downloadExcel(params)
             .then(res => {
-              // console.log(res);
+              console.log(res);
               if (res.data.size === 0){
                 this.$message({
                   type: 'error',
@@ -789,18 +808,30 @@ import {AuditMixin} from './mixins/AuditMixin'
                 this.downloadLoading = false;
                 return;
               }
-              const blob = res.data
-              const reader = new FileReader()
-              reader.readAsDataURL(blob)
-                  reader.onload = (e) => {
-                    const a = document.createElement('a')
-                    a.download = '已稽核清单__' + this.dateFormatter(new Date())
-                    a.href = e.target.result
-                    document.body.appendChild(a)
-                    a.click()
-                    document.body.removeChild(a)
-                    this.downloadLoading = false;
-              }
+
+               let url = window.URL.createObjectURL(res.data); //创建一个新的 URL 对象
+                console.log(new Date())
+                //以下代码一句话解释，在页面上生成一个a标签并指定href为上面的url,然后模拟点击，以实现自动下载
+                var a = document.createElement("a");
+                document.body.appendChild(a);
+                a.href = url;
+                a.download = '已稽核清单__' + this.dateFormatter(new Date());
+                a.click();
+                window.URL.revokeObjectURL(url);
+                this.downloadLoading = false;
+                console.log(new Date())
+              // const blob = res.data
+              // const reader = new FileReader()
+              // reader.readAsDataURL(blob)
+              //     reader.onload = (e) => {
+              //       const a = document.createElement('a')
+              //       a.download = '已稽核清单__' + this.dateFormatter(new Date())
+              //       a.href = e.target.result
+              //       document.body.appendChild(a)
+              //       a.click()
+              //       document.body.removeChild(a)
+              //       this.downloadLoading = false;
+              // }
             })
             .catch(e => {
               this.downloadLoading = false;

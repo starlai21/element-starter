@@ -24,12 +24,12 @@ var AuditMixin = {
     },
     msgFormatter(data){
       if (data){
-        if (data == 1)
-          return '是';
+        if (data.isMaShangGou == 1)
+          return '码上购';
         else
-          return '否'
+          return data.sysinfo;
       }
-      return '否'
+      return '';
     },
     showPart(data){
       if (data && data.length > 15)
@@ -79,12 +79,14 @@ var AuditMixin = {
             }, {
               value: '6',
               label: '非正面清晰照/完整照'
-            }, {
-              value: '7',
-              label: '未按要求持证/未持证'
-            }, {
+            }, 
+            {
               value: '8',
               label: '其他'
+            },
+            {
+              value: '7',
+              label: '未按要求持证/未持证'
             }],		
             typeOptions: [{
               value: '1',

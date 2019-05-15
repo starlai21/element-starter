@@ -164,8 +164,8 @@
                   <el-form-item label="身份证号:">
                     {{auditing.id}}
                   </el-form-item>
-                  <el-form-item label="码上购:">
-                    {{auditing.isMaShangGou | msgFormatter}}
+                  <el-form-item label="系统来源:">
+                    {{auditing | msgFormatter}}
                   </el-form-item>
                   <el-form-item label="发展渠道:">
                     {{auditing.channel | showPart}}
@@ -178,6 +178,9 @@
                   </el-form-item>
                   <el-form-item label="靓号类型:">
                     {{auditing.numType}}
+                  </el-form-item>
+                  <el-form-item label="县分:" v-if="isAdmin">
+                    {{auditing.countyId}}
                   </el-form-item>
                 </el-form>
 
