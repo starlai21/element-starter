@@ -2,8 +2,7 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Auditing from './components/Auditing.vue'
 import Audited from './components/Audited.vue'
-import Scheduling from './components/Scheduling.vue'
-import ScheduleQuery from './components/ScheduleQuery.vue'
+import AbnormalCall from './components/AbnormalCall.vue'
 import ChangePassword from './components/ChangePassword.vue'
 import Login from './components/Login.vue'
 import Home from './components/Home.vue'
@@ -29,11 +28,11 @@ const routes = [
       {
         path: 'changePassword',
         component: ChangePassword
+      },
+      {
+        path: 'abnormalCall',
+        component: AbnormalCall
       }
-      // {
-      //   path: 'scheduleQuery',
-      //   component: ScheduleQuery
-      // }
     ]
 
   },

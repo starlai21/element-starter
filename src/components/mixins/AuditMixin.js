@@ -36,6 +36,12 @@ var AuditMixin = {
         return data.substr(0,15)+"...";
       else
         return data;
+    },
+    processId(id){
+      if(id)
+        return id.replace(/(\w{10})\w*(\w{4})/, '$1****$2');
+      else
+        return id;
     }
   },
 	data(){
@@ -163,12 +169,13 @@ var AuditMixin = {
         },
 
         playerOptions: {
-          width:'500',
-          height:"600",
+          width:'430',
+          height:"430",
           sources: [{
             type : "video/mp4",
             src: "http://techslides.com/demos/sample-videos/small.mp4"
-          }]
+          }],
+          autoplay:true
         },
         successLoading:false,
         failureLoading:false,
@@ -215,6 +222,16 @@ var AuditMixin = {
         return "https://dummyimage.com/600x400/000000/fff&text=default";
       },
 
+      livingPicExists(pictures){
+        if (pictures && pictures.length >0){
+          var pic =  pictures.filter((c,i,a) => {
+            return c.type === 0
+          })
+          if (pic.length != 0)
+            return true;
+        }
+        return false;
+      },
       isIdPicLengthGt1(pictures){
         if(pictures && pictures.length>0){
           var pic =  pictures.filter((c,i,a) => {

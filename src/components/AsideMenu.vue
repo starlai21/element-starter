@@ -22,16 +22,19 @@
                 <el-menu-item index="audited">已稽核结果</el-menu-item>
                 <el-menu-item index="auditing">未稽核数据</el-menu-item>
               </el-menu-item-group>
-
           </el-submenu>
-<!--           <el-menu-item index="3">
-            <i class="el-icon-star-off"></i>
-            <span slot="title">我的收藏</span>
-          </el-menu-item>
-          <el-menu-item index="4">
-            <i class="el-icon-search"></i>
-            <span slot="title">客户资料查询</span>
-          </el-menu-item> -->
+
+          <el-submenu index="3" v-if="isAdmin">
+            <template slot="title">
+              <i class="el-icon-phone"></i>
+              <span>用户质态稽核</span>
+            </template>
+            <el-menu-item-group>
+              <el-menu-item index="abnormalCall">通话异常监控</el-menu-item>
+            </el-menu-item-group>
+          </el-submenu>
+
+
         </el-menu>
     </div>
 </template>
@@ -43,6 +46,10 @@
 
 <script type="text/javascript">
 	export default{
-
+    computed:{
+      isAdmin(){
+        return this.$store.state.isAdmin;
+      }
+    }
 	}
 </script>

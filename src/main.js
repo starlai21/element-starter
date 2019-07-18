@@ -5,7 +5,7 @@ import 'element-ui/lib/theme-chalk/index.css'
 import App from './App.vue'
 
 import router from './router'
-import Mock from './mock'
+// import Mock from './mock'
 import store from './store'
 import axios from 'axios'
 
@@ -32,12 +32,17 @@ axios.interceptors.request.use(
 axios.interceptors.response.use(
     (response) => {
             // 判断一下响应中是否有 token，如果有就直接使用此 token 替换掉本地的 token。你可以根据你的业务需求自己编写更新 token 的逻辑
-            var token = response.headers.authorization
-            if (token) {
-                // 如果 header 中存在 token，那么触发 refreshToken 方法，替换本地的 token
-                // store.commit('refreshToken', token);
-                console.log('token refreshed.');
+            // var token = response.headers.authorization
+            // if (token) {
+            //     // 如果 header 中存在 token，那么触发 refreshToken 方法，替换本地的 token
+            //     // store.commit('refreshToken', token);
+            //     console.log('token refreshed.');
+            // }
+            if (response.data.code == 401){
+                store.commit('logout'); 
             }
+
+
             return response
         }, (error) => {
             switch (error.response.status) {

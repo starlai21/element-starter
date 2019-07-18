@@ -162,7 +162,7 @@
                     {{auditing.mobile}}
                   </el-form-item>
                   <el-form-item label="身份证号:">
-                    {{auditing.id}}
+                    {{auditing.id | processId}}
                   </el-form-item>
                   <el-form-item label="系统来源:">
                     {{auditing | msgFormatter}}
@@ -182,6 +182,9 @@
                   <el-form-item label="县分:" v-if="isAdmin">
                     {{auditing.countyId}}
                   </el-form-item>
+                  <el-form-item label="对比度:" v-if="auditing.dbd">
+                    {{auditing.dbd}}
+                  </el-form-item>
                 </el-form>
 
               </el-card> 
@@ -190,14 +193,12 @@
 
 
             <el-col :span="6" :offset="2" >
-              <el-card :body-style="{ padding: '0px' }" v-loading="pictureLoading" class="box-card">
+              <video-player :options="playerOptions" v-show="isVideoExist(auditing.pictures)"></video-player>
+              <el-card :body-style="{ padding: '0px' }" v-loading="pictureLoading" class="box-card" v-if="livingPicExists(auditing.pictures)">
+
                 <img :src="livingPic(auditing.pictures)" class="my-image" v-viewer>                
                 <div style="padding: 14px;">
                   <span>现场照 <template v-if="isLiving(auditing.pictures)">(活体)</template></span> 
-                  <el-popover  trigger="click" v-show="isVideoExist(auditing.pictures)">
-                    <video-player :options="playerOptions"></video-player>
-                    <el-button type="primary" style="padding:4px" icon="el-icon-view" slot="reference">查看视频</el-button>
-                  </el-popover>
                 </div>
               </el-card>
             </el-col>
@@ -338,12 +339,12 @@ import {AuditMixin} from './mixins/AuditMixin'
 
               var params = {mobile: this.searchForm.mobile, types: this.searchForm.types, channel: this.searchForm.channel, states:this.searchForm.states, 
                               adminStates: this.searchForm.adminStates, startDate: this.searchForm.startDate, endDate: this.searchForm.endDate,
-                             specialTypes: this.searchForm.specialTypes, county: this.searchForm.county, msg:this.searchForm.msg, needSpotCheck:this.searchForm.needSpotCheck};
+                             specialTypes: this.searchForm.specialTypes, county: this.searchForm.county, msg:this.searchForm.msg? 1:0, needSpotCheck:this.searchForm.needSpotCheck ? 1:0};
                console.log(params) 
                fetchAuditingData(params).then(data => {
-                // console.log(data);
+                
                 // this.auditings = data.auditings;
-                 this.auditings = data;
+                 this.auditings = data.data;
                  this.$set(this.page,'total',this.auditings.length);
                  // this.$set(this.page,'total',data.totalElements);
                  if (this.auditings.length>0){
@@ -450,7 +451,7 @@ import {AuditMixin} from './mixins/AuditMixin'
           fetchPictures({userUuid: this.auditing.uuid}).then(data => {
             // console.log(data);
             this.pictureLoading = false;
-            this.$set(this.auditing, 'pictures', data);
+            this.$set(this.auditing, 'pictures', data.data);
             this.$set(this.auditings, this.currentIndex, this.auditing);
           }).catch(e => {
             this.pictureLoading = false;

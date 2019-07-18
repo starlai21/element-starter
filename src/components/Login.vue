@@ -39,7 +39,7 @@
 
 <script>
 
-import {requestLogin, submitPassedData, isAdmin} from '../api';
+import {requestLogin, submitPassedData} from '../api';
 import particles from 'particles.js'
 
 
@@ -202,25 +202,39 @@ export default {
           var loginParams = {username: this.account.username, password: this.account.password};
           requestLogin(loginParams).then(res => {
             this.isLoading = false;
-            let {msg, code, data} = res;
-            if(code == 200){
-              this.$store.commit('setToken', data);
+            let {msg, code, token, isAdmin} = res;
+            if(code == 0){
+              this.$store.commit('setToken', token);
               this.$store.commit("setUsername", this.account.username);
 
-              isAdmin().then(res => {
+              var welcomeMsg = "欢迎回来"
+              this.$store.commit("setIsAdmin", isAdmin);
+              if(isAdmin){
+                welcomeMsg = welcomeMsg + ", 管理员"
+              }
 
-                this.$store.commit("setIsAdmin", res);
-                var welcomeMsg = "欢迎回来";
-                if (res){
-                  welcomeMsg = welcomeMsg+", 管理员"
-                } 
-                this.$message({
-                  message: welcomeMsg,
-                  type: 'success'
-                }); 
 
-                this.$router.push({path:'/'});
-              }).catch(e => console.log(e));
+              this.$message({
+                message: welcomeMsg,
+                type: 'success'
+              }); 
+
+              this.$router.push({path:'/'});
+
+              // isAdmin().then(res => {
+
+              //   this.$store.commit("setIsAdmin", res);
+              //   var welcomeMsg = "欢迎回来";
+              //   if (res){
+              //     welcomeMsg = welcomeMsg+", 管理员"
+              //   } 
+              //   this.$message({
+              //     message: welcomeMsg,
+              //     type: 'success'
+              //   }); 
+
+              //   this.$router.push({path:'/'});
+              // }).catch(e => console.log(e));
 
               // this.$message({
               //   message: '欢迎回来',

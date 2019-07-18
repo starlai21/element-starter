@@ -29,11 +29,11 @@
           <el-form-item>
             <el-button type="primary" @click="search">查询</el-button>
           </el-form-item>
-          <el-form-item v-if="!isAdmin">
+          <el-form-item >
             <el-button type="success" @click="submitPassedData" :loading="submitLoading">一键提交</el-button>
           </el-form-item>
-          <el-form-item v-else>
-            <el-button type="success" @click="generateReport" :loading="submitLoading">生成报表</el-button>
+          <el-form-item v-if="isAdmin">
+            <el-button type="warning" @click="generateReport" :loading="reportLoading">生成报表</el-button>
           </el-form-item>
               <el-button style="float: right; padding: 14px 0px" type="text" @click="searchForm.isVisible = !searchForm.isVisible">
                 <span v-if="searchForm.isVisible">折叠</span>
@@ -329,7 +329,7 @@
                     {{currentRow.mobile}}
                   </el-form-item>
                   <el-form-item label="身份证号:">
-                    {{currentRow.id}}
+                    {{currentRow.id | processId}}
                   </el-form-item>
                   <el-form-item label="系统来源:">
                     {{currentRow | msgFormatter}}
@@ -348,6 +348,9 @@
                   </el-form-item>
                   <el-form-item label="县分:" v-if="isAdmin">
                     {{currentRow.countyId}}
+                  </el-form-item>
+                  <el-form-item label="对比度:" v-if="currentRow.dbd">
+                    {{currentRow.dbd}}
                   </el-form-item>
                 </el-form>
               </el-card> 
@@ -544,6 +547,7 @@ import {AuditMixin} from './mixins/AuditMixin'
         logs: [],
         pictureLoading: false,
         submitLoading:false,
+        reportLoading:false,
         isDialogVisible: false,
         reportInsertDate: null,
         reportEntryDate: null
@@ -611,7 +615,7 @@ import {AuditMixin} from './mixins/AuditMixin'
         this.submitLoading =  true;
         submitPassedData().then(data => {
           this.submitLoading = false;
-          if (data == 0){
+          if (data.code == 0 && data.data.status == 0){
             this.$prompt('请输入验证码', '验证码将在几秒后发送到您的手机', {
                      confirmButtonText: '确定',
                      cancelButtonText: '取消',
@@ -619,7 +623,7 @@ import {AuditMixin} from './mixins/AuditMixin'
                     this.submitLoading = true;
                     sendSafeCode({safeCode:value}).then(data => {
                       this.submitLoading = false;
-                      if (data){
+                      if (data.code == 0){
                         this.$message({
                          type: 'success',
                          message: '提交成功'
@@ -644,13 +648,13 @@ import {AuditMixin} from './mixins/AuditMixin'
                      });       
                    });
           }
-          else if (data == -1){
+          else if (data.code != 0 ){
             this.$message({
               type: 'error',
               message: '验证码获取失败'
             });
           }
-          else if (data == 1){
+          else if (data.code == 0 && data.data.status == 1){
             this.$message({
               type: 'error',
               message: '数据提交中，请不要频繁获取验证码'
@@ -693,13 +697,13 @@ import {AuditMixin} from './mixins/AuditMixin'
 
             var params = {mobile: this.searchForm.mobile, types: this.searchForm.types, channel: this.searchForm.channel, 
                          startDate: this.searchForm.startDate, endDate: this.searchForm.endDate, adminStates: this.searchForm.adminStates,
-                         specialTypes: this.searchForm.specialTypes, states: this.searchForm.states, updateFrom: this.searchForm.updateFrom, updateTo: this.searchForm.updateTo, county:this.searchForm.county, currentPage: this.page.currentPage-1};
+                         specialTypes: this.searchForm.specialTypes, states: this.searchForm.states, updateFrom: this.searchForm.updateFrom, updateTo: this.searchForm.updateTo, county:this.searchForm.county, currentPage: this.page.currentPage};
             // console.log(params);
             fetchAuditedData(params).then(data => {
               // console.log(data);
 
-              this.tableData = data.content;
-              this.$set(this.page,'total',data.totalElements);
+              this.tableData = data.data.list;
+              this.$set(this.page,'total',data.data.total);
               if (this.tableData.length>0){
                 // this.$set(this.page,'currentPage',1);
               }
@@ -770,7 +774,7 @@ import {AuditMixin} from './mixins/AuditMixin'
           this.logLoading = false;
           // console.log(this.logLoading)
           console.log(data);
-          this.logs = data;
+          this.logs = data.data;
         }).catch( e => {
           this.logLoading = false;
           console.log(e);
@@ -780,9 +784,9 @@ import {AuditMixin} from './mixins/AuditMixin'
         if (!this.currentRow.pictures){
           this.pictureLoading = true;
           fetchPictures({userUuid: this.currentRow.uuid}).then(data => {
-            console.log(data);
+            // console.log(data);
             this.pictureLoading = false;
-            this.$set(this.currentRow, 'pictures', data);
+            this.$set(this.currentRow, 'pictures', data.data);
             this.$set(this.tableData, this.currentRow.index, this.currentRow);
           }).catch(e => {
             this.pictureLoading = false;
@@ -819,7 +823,7 @@ import {AuditMixin} from './mixins/AuditMixin'
                 a.click();
                 window.URL.revokeObjectURL(url);
                 this.downloadLoading = false;
-                console.log(new Date())
+                //console.log(new Date())
               // const blob = res.data
               // const reader = new FileReader()
               // reader.readAsDataURL(blob)
@@ -857,7 +861,7 @@ import {AuditMixin} from './mixins/AuditMixin'
         }
         else{
           this.isDialogVisible = false;
-          this.submitLoading = true;
+          this.reportLoading = true;
           var joinDateFrom = null, joinDateTo = null;
 
           if (this.reportEntryDate && this.reportEntryDate.length == 2){
@@ -872,7 +876,7 @@ import {AuditMixin} from './mixins/AuditMixin'
                     message: '不存在符合上述条件的数据, 导出失败!',
                     duration: 3000
                   });
-                  this.submitLoading = false;
+                  this.reportLoading = false;
                   return;
                 }
                 const blob = res.data
@@ -888,11 +892,11 @@ import {AuditMixin} from './mixins/AuditMixin'
                       document.body.appendChild(a)
                       a.click()
                       document.body.removeChild(a)
-                      this.submitLoading = false;
+                      this.reportLoading = false;
                 }
               })
               .catch(e=>{
-                this.submitLoading = false;
+                this.reportLoading = false;
                 console.log(e);
               })
         }

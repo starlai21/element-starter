@@ -63,15 +63,15 @@ export default {
 	      	    	newPassword: this.account.newPassword, newPasswordConfirm: this.account.newPasswordConfirm};
 	      	    requestChangePassword(loginParams).then(res => {
 	      	      this.isLoading = false;
-	      	      if(res){
+	      	      if(res.code == 0){
 	      	      	this.$message({
-	      	            message: '密码修改成功',
+	      	            message: res.msg,
 	      	            type: 'success'
 	      	        }); 	
 	      	      }
 	      	      else {
 	      	        this.$message({
-	      	          message: '密码修改失败',
+	      	          message: res.msg,
 	      	          type: 'error'
 	      	        });
 	      	      }
